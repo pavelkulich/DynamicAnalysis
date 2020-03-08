@@ -2,10 +2,22 @@ import numpy as np
 import pandas as pd
 
 
-def dynamic_double_pasternak(ei1=4e7, ei2=500, k1=1e8, k2=5.5e7, ga=5.5e6, q=1e5, v=40, c1=9e5, c2=3.2e5, m1=60, m2=304,
-                             len=30):
-    s_r = np.linspace(0, len, 500)
-    s_l = np.linspace(-len, 0, 500)
+
+
+def dynamic_double_pasternak(gene, v, m1, m2):
+# def dynamic_double_pasternak(ei1=4e7, ei2=500, k1=1e8, k2=5.5e7, ga=5.5e6, q=1e5, v=40, c1=9e5, c2=3.2e5, m1=60, m2=304,
+#                              len=30):
+    ei1 = gene['EI_1']
+    ei2 = gene['EI_2']
+    ga = gene['GA']
+    k1 = gene['k_1']
+    k2 = gene['k_2']
+    c1 = gene['c_1']
+    c2 = gene['c_2']
+    q = gene['Q']
+
+    s_r = np.linspace(0, 30, 500)
+    s_l = np.linspace(-30, 0, 500)
 
     lmbd = (k1 / (4 * ei1)) ** (1 / 4)
 

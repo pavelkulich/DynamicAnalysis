@@ -16,6 +16,13 @@ def import_data(path="data/deflection.csv", separator=";", flip=True):
 
 # method finds scaling and moving coefficient in order to adjust analytical models with respect to measured data
 def get_rescale_coeffs(base_data, data):
+    # local min and max finding for measured data
+    base_data['min'] = \
+        base_data.iloc[argrelextrema(base_data['y_axis'].values, np.less_equal, order=20)[0]]['y_axis']
+    base_data['max'] = \
+        base_data.iloc[argrelextrema(base_data['y_axis'].values, np.greater_equal, order=20)[0]][
+            'y_axis']
+
     base_data_low_1 = base_data['x_axis'][base_data['min'].nsmallest(2).index[0]]
     base_data_low_2 = base_data['x_axis'][base_data['min'].nsmallest(2).index[1]]
     base_data_high = base_data['x_axis'][base_data['max'].nlargest(1).index[0]]
@@ -84,13 +91,6 @@ def resample_data(base_data, data):
 
 
 def rescale_and_fit(measured_data, analytical_data):
-    # local min and max finding for measured data
-    measured_data['min'] = \
-        measured_data.iloc[argrelextrema(measured_data['y_axis'].values, np.less_equal, order=20)[0]]['y_axis']
-    measured_data['max'] = \
-        measured_data.iloc[argrelextrema(measured_data['y_axis'].values, np.greater_equal, order=20)[0]][
-            'y_axis']
-
     # analytical models scaling and moving
     coeff_1, coeff_2, coeff_3 = get_rescale_coeffs(measured_data, analytical_data)
     analytical_data_1 = scale_axis(analytical_data.copy(), coeff_1, coeff_2)
