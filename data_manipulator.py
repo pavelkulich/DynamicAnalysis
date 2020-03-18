@@ -8,7 +8,7 @@ def import_data(path="data/deflection.csv", separator=";", flip=True):
     data = pd.read_csv(path, separator)
     if flip:
         data_flip = -data.reindex(index=data.index[::-1]).reset_index(drop=True)
-        print(data_flip)
+        # print(data_flip)
         return data_flip
 
     return data
