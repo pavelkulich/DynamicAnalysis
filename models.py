@@ -2,11 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-
-
 def dynamic_double_pasternak(gene, v, m1, m2):
-# def dynamic_double_pasternak(ei1=4e7, ei2=500, k1=1e8, k2=5.5e7, ga=5.5e6, q=1e5, v=40, c1=9e5, c2=3.2e5, m1=60, m2=304,
-#                              len=30):
     ei1 = gene['EI_1']
     ei2 = gene['EI_2']
     ga = gene['GA']

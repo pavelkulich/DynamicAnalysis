@@ -8,13 +8,13 @@ import pandas as pd
 
 def init_generator(n):
     params = [['EI_1', 3e6, 1e8],
-              ['EI_2', 1, 1e3],
+              ['EI_2', 1, 1e4],
               ['GA', 1e5, 1e6],
               ['k_1', 5e7, 5e8],
-              ['k_2', 1e7, 2e8],
-              ['c_1', 1e5, 1e6],
-              ['c_2', 1e5, 1e6],
-              ['Q', 9e4, 3e5]]
+              ['k_2', 1e6, 2e8],
+              ['c_1', 5e4, 1e6],
+              ['c_2', 8e4, 1e6],
+              ['Q', 9e3, 3e5]]
 
     pop = []
     for i in range(n):

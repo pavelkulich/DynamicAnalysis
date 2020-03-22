@@ -18,6 +18,7 @@ def plot_4(data_1, data_2, data_3, data_4):
     plt.grid(True)
     plt.show()
 
+
 def plot(data_1, data_2):
     plt.plot(data_1['y_axis'])
     plt.plot(data_2['y_axis'])
