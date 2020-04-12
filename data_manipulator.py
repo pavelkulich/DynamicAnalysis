@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from scipy.signal import argrelextrema
 from scipy import interpolate
+import matplotlib.pyplot as plt
 
 
 def import_data(path="data/deflection.csv", separator=";", flip=True):
@@ -94,7 +95,12 @@ def rescale_and_fit(measured_data, analytical_data):
     # analytical models scaling and moving
     coeff_1, coeff_2, coeff_3 = get_rescale_coeffs(measured_data, analytical_data)
     analytical_data_1 = scale_axis(analytical_data.copy(), coeff_1, coeff_2)
-    analytical_data_2 = scale_axis(analytical_data.copy(), coeff_1, coeff_3)
+    analytical_data_2 = scale_axis(analytical_data.copy(), coeff_1, coeff_3)\
+
+    plt.plot(measured_data['x_axis'], measured_data['y_axis'])
+    plt.scatter(measured_data['x_axis'], measured_data['min'])
+    plt.scatter(measured_data['x_axis'], measured_data['max'])
+    plt.show()
 
     # analytical models superposition and crop and resampling with respect to measured data
     sup_data = superposition(analytical_data_1.copy(), analytical_data_2.copy())
@@ -102,3 +108,6 @@ def rescale_and_fit(measured_data, analytical_data):
     resampled_data = resample_data(measured_data, sup_data)
 
     return measured_data, resampled_data
+
+
+
