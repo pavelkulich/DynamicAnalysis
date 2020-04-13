@@ -1,4 +1,5 @@
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from termcolor import colored
 import pandas as pd
 
@@ -21,12 +22,23 @@ class DBManager:
         if dbtype in self.DB_ENGINE.keys():
             engine_url = self.DB_ENGINE[dbtype].format(DB=dbname)
             self.db_engine = create_engine(engine_url, echo=False)
-            print(self.db_engine)
+            Session = sessionmaker(bind=self.db_engine)
+            self.session = Session()
         else:
             print("DBType is not found in DB_ENGINE")
 
+    def get_session(self):
+        return self.session
+
     def create_db_tables(self):
         Base.metadata.create_all(self.db_engine)
+
+    def insert_train(self):
+        train1 = Trains(train="Rychlik")
+        train2 = Trains(train="Osobak")
+
+        self.session.bulk_save_objects([train1, train2])
+        self.session.commit()
 
     def get_all_table_data(self, table):
         with self.db_engine.connect() as connection:
@@ -77,19 +89,6 @@ class DBImporter(DBManager):
                 print('Please check number of columns and columns names.')
                 print(e)
                 return False
-
-        elif table == cfg.TRAINS:
-            df = pd.DataFrame(data,
-                              columns=Trains.__table__.columns.keys()[1::])
-            df.to_sql(cfg.TRAINS, con=self.db_engine, index=False, if_exists='append')
-        elif table == cfg.LOCATIONS:
-            df = pd.DataFrame(data,
-                              columns=Locations.__table__.columns.keys()[1::])
-            df.to_sql(cfg.LOCATIONS, con=self.db_engine, index=False, if_exists='append')
-        elif table == cfg.METATABLE:
-            df = pd.DataFrame(data,
-                              columns=MetaTable.__table__.columns.keys()[1::])
-            df.to_sql(cfg.METATABLE, con=self.db_engine, index=False, if_exists='append')
         else:
             print('Table does not exists!')
 
@@ -98,6 +97,25 @@ class DBImporter(DBManager):
         if index > 0:
             with self.db_engine.connect() as connection:
                 connection.execute(f'DELETE FROM {table} WHERE "id" = {index}')
+
+    def set_metatable_data(self, location, date, track, train, usp, crossing, filename):
+        location_obj = self.session.query(Locations).filter(Locations.location == location).first()
+        if not location_obj:
+            location_obj = Locations(location=location)
+            self.session.add(location_obj)
+
+        train_obj = self.session.query(Trains).filter(Trains.train == train).first()
+        if not train_obj:
+            train_obj = Trains(train=train)
+            self.session.add(train_obj)
+
+        metatable = MetaTable(date=date, location=location_obj, track=track, train=train_obj, usp=usp,
+                              crossing=crossing, filename=filename)
+
+        self.session.add(metatable)
+        self.session.commit()
+
+        return metatable.id
 
     @staticmethod
     def get_column_names(table=''):
@@ -111,3 +129,4 @@ class DBImporter(DBManager):
 
 class DBExporter(DBManager):
     pass
+

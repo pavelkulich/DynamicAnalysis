@@ -21,7 +21,7 @@ TRACK = 1  # measured track
 #################
 
 DUPLICITYCHECK = True  # Check if file is imported yet
-SEPARATOR = '§'
+SEPARATOR = '\t'
 
 
 class Importer:
@@ -31,7 +31,7 @@ class Importer:
         self.usp = usp
         self.crossing = crossing
         self.track = track
-        self.db = DBImporter(dbtype='sqlite', dbname='vut_db.sqlite')
+        self.db = DBImporter(dbtype='sqlite', dbname='avut_db.sqlite')
         self.db.create_db_tables()
         self.path = None
         self.filename = None
@@ -40,6 +40,7 @@ class Importer:
 
         # path = filedialog.askdirectory()
         files = glob(f'D:\Pavel\Repos\DynamicAnalysis\data\*{extension}')
+
         # files = glob(f'{path}\*{extension}')
 
         # Function prevents data duplicity
@@ -102,7 +103,6 @@ class Importer:
                 break
 
             old_columns = list(data.columns)
-            # print(columns)
             new_columns = []
             for column in old_columns:
                 if '[' in column:
@@ -142,20 +142,19 @@ class Importer:
             new_data = data.loc[:, data.columns.isin(table_columns)].copy()
 
             if new_data.size:
-                date = self._get_date()
+                metatable_id = self.db.set_metatable_data(location=self.location, date=self._get_date(),
+                                                                  track=self.track,
+                                                                  train=self._get_train(), usp=self.usp,
+                                                                  crossing=self.crossing,
+                                                                  filename=self.filename.split('\\')[-1])
 
-                location_id = self._get_item_index(cfg.LOCATIONS)
-                train_id = self._get_item_index(cfg.TRAINS)
+                new_data['meta_id'] = metatable_id
 
-                self.db.insert_data(
-                    [[date, location_id, self.track, train_id, self.usp, self.crossing, self.filename.split('\\')[-1]]],
-                    cfg.METATABLE)
-                new_data['meta_id'] = self.db.get_max_id(cfg.METATABLE)[0]
                 if self.db.insert_data(new_data, cfg.DATATABLE):
                     continue
 
-                # delete metadata if new_data not inserted
-                self.db.delete_last_row(cfg.METATABLE)
+            # delete metadata if new_data not inserted
+            self.db.delete_last_row(cfg.METATABLE)
 
     # returns location id of self.location
     def _get_item_index(self, table):

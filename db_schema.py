@@ -1,5 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Boolean
+from sqlalchemy.orm import relationship
 
 import db_config as cfg
 
@@ -25,7 +26,6 @@ class DataTable(Base):
     dat13 = Column('az_k2', Float, nullable=False)
     dat14 = Column('az_p2', Float, nullable=False)
     dat15 = Column('az_kl2', Float, nullable=False)
-
     meta_id = Column('meta_id', Integer, ForeignKey(f'{cfg.METATABLE}.id'), nullable=False)
 
     def __repr__(self):
@@ -38,8 +38,10 @@ class MetaTable(Base):
     id = Column('id', Integer, primary_key=True, nullable=False, unique=True, autoincrement=True)
     date = Column('date', String, nullable=False)
     location_id = Column('location_id', Integer, ForeignKey(f'{cfg.LOCATIONS}.id'), nullable=False)
+    location = relationship('Locations')
     track = Column('track', Integer, nullable=False)
     train_id = Column('train_id', Integer, ForeignKey(f'{cfg.TRAINS}.id'), nullable=False)
+    train = relationship('Trains')
     usp = Column('usp', Boolean, nullable=False)
     crossing = Column('crossing', Boolean, nullable=False)
     filename = Column('filename', String, nullable=False)
