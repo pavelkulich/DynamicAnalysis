@@ -95,7 +95,7 @@ def rescale_and_fit(measured_data, analytical_data):
     # analytical models scaling and moving
     coeff_1, coeff_2, coeff_3 = get_rescale_coeffs(measured_data, analytical_data)
     analytical_data_1 = scale_axis(analytical_data.copy(), coeff_1, coeff_2)
-    analytical_data_2 = scale_axis(analytical_data.copy(), coeff_1, coeff_3)\
+    analytical_data_2 = scale_axis(analytical_data.copy(), coeff_1, coeff_3)
 
     plt.plot(measured_data['x_axis'], measured_data['y_axis'])
     plt.scatter(measured_data['x_axis'], measured_data['min'])
@@ -108,6 +108,3 @@ def rescale_and_fit(measured_data, analytical_data):
     resampled_data = resample_data(measured_data, sup_data)
 
     return measured_data, resampled_data
-
-
-
