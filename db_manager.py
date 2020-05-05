@@ -21,7 +21,7 @@ class DBManager:
         dbtype = dbtype.lower()
         if dbtype in self.DB_ENGINE.keys():
             engine_url = self.DB_ENGINE[dbtype].format(DB=dbname)
-            self.db_engine = create_engine(engine_url, echo=False)
+            self.db_engine = create_engine(engine_url, echo=True)
             Session = sessionmaker(bind=self.db_engine)
             self.session = Session()
         else:
@@ -46,11 +46,46 @@ class DBManager:
             data = query.fetchall()
         return data
 
+    def get_all_data_meta_id(self, meta_id):
+        data = self.session.query(DataTable.time,
+                                  DataTable.dat1,
+                                  DataTable.dat2,
+                                  DataTable.dat3,
+                                  DataTable.dat4,
+                                  DataTable.dat5,
+                                  DataTable.dat6,
+                                  DataTable.dat7,
+                                  DataTable.dat8).filter(DataTable.meta_id == meta_id).statement
+        return self.query_to_df(data)
+
+    def get_metadata_with_id(self, id):
+        data = self.session.query(MetaTable.id, MetaTable.date, MetaTable.track, MetaTable.usp, MetaTable.crossing,
+                                  Trains.train, Locations.location, MetaTable.filename).join(Trains, Locations).filter(
+            MetaTable.id == id).statement
+
+        return self.query_to_df(data)
+
     def get_column_from_table(self, col, table):
         with self.db_engine.connect() as connection:
             query = connection.execute(f'SELECT {col} FROM {table}')
-            data = query.fetchall()
-        return data
+            rows = query.fetchall()
+        return rows
+
+    def get_ids_from_metatable(self):
+        data = self.session.query(MetaTable.id).statement
+        return self.query_to_df(data)
+
+    # def join_data_and_metadata(self):
+    #     table = cfg.DATATABLE
+    #     table2 = cfg.METATABLE
+    #     with self.db_engine.connect() as connection:
+    #         query = connection.execute(f'SELECT * FROM {table} JOIN {table2}')
+    #         data = query.fetchall()
+    #     return data
+
+    def query_to_df(self, query):
+        df = pd.read_sql(query, con=self.db_engine)
+        return df
 
     def get_max_id(self, table):
         with self.db_engine.connect() as connection:
@@ -75,7 +110,7 @@ class DBManager:
 class DBImporter(DBManager):
     def insert_data(self, data: list, table=''):
         if table == '':
-            print('Table has not bees specified!')
+            print('Table has not been specified!')
         elif table == cfg.DATATABLE:
             df = pd.DataFrame(data,
                               columns=DataTable.__table__.columns.keys()[1::])
@@ -111,7 +146,6 @@ class DBImporter(DBManager):
 
         metatable = MetaTable(date=date, location=location_obj, track=track, train=train_obj, usp=usp,
                               crossing=crossing, filename=filename)
-
         self.session.add(metatable)
         self.session.commit()
 
@@ -128,5 +162,8 @@ class DBImporter(DBManager):
 
 
 class DBExporter(DBManager):
-    pass
+    def columns_from_datatable(self, id):
+        data = self.session.query(DataTable.time, DataTable.dat8).filter(DataTable.meta_id == id).statement
+        return self.query_to_df(data)
+
 

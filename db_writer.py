@@ -4,6 +4,7 @@ from termcolor import colored
 from tkinter import filedialog
 import click
 import pandas as pd
+import plotter as pltr
 
 from db_manager import DBImporter
 import db_config as cfg
@@ -11,27 +12,15 @@ import db_config as cfg
 pd.set_option('display.max_columns', 20)
 pd.set_option('display.width', 1000)
 
-################
-# those variables need to be set
-# also need to be set variable YEAR in db_config
-LOCATION = 'Planá nad Lužnicí'  # measuring location
-USP = True  # under sleeper pads
-CROSSING = False  # measured at crossing
-TRACK = 1  # measured track
-#################
 
-DUPLICITYCHECK = True  # Check if file is imported yet
-SEPARATOR = '\t'
-
-
-class Importer:
+class Writer:
 
     def __init__(self, location: str, usp: bool, crossing: bool, track: int):
         self.location = location
         self.usp = usp
         self.crossing = crossing
         self.track = track
-        self.db = DBImporter(dbtype='sqlite', dbname='avut_db.sqlite')
+        self.db = DBImporter(dbtype='sqlite', dbname='vut_db.sqlite')
         self.db.create_db_tables()
         self.path = None
         self.filename = None
@@ -73,7 +62,7 @@ class Importer:
                     old_columns.pop(index)
 
         for file in files:
-            if DUPLICITYCHECK:
+            if cfg.DUPLICITYCHECK:
                 if _check_duplicity():
                     print('File already imported!')
                     continue
@@ -143,10 +132,9 @@ class Importer:
 
             if new_data.size:
                 metatable_id = self.db.set_metatable_data(location=self.location, date=self._get_date(),
-                                                                  track=self.track,
-                                                                  train=self._get_train(), usp=self.usp,
-                                                                  crossing=self.crossing,
-                                                                  filename=self.filename.split('\\')[-1])
+                                                          track=self.track, train=self._get_train(), usp=self.usp,
+                                                          crossing=self.crossing,
+                                                          filename=self.filename.split('\\')[-1])
 
                 new_data['meta_id'] = metatable_id
 
@@ -220,6 +208,24 @@ class Importer:
         return file_list
 
 
+class Selector:
+    def __init__(self):
+        self.db = DBImporter(dbtype='sqlite', dbname='vut_db.sqlite')
+
+    def __insert_selections(self):
+        pass
+
+    def perform_selections(self):
+        meta_ids = self.db.get_ids_from_metatable()
+        for meta_id in meta_ids['id']:
+            print(meta_id)
+            data = self.db.get_all_data_meta_id(meta_id)
+            metadata = self.db.get_metadata_with_id(meta_id)
+            pltr.plot_deflections_overview(data, metadata)
+
+
 if __name__ == '__main__':
-    importer = Importer(location=LOCATION, usp=USP, crossing=CROSSING, track=TRACK)
-    importer.import_data(sep=SEPARATOR)
+    # writer = Writer(location=cfg.LOCATION, usp=cfg.USP, crossing=cfg.CROSSING, track=cfg.TRACK)
+    # writer.import_data(sep=cfg.SEPARATOR)
+    selector = Selector()
+    selector.perform_selections()

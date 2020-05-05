@@ -66,5 +66,14 @@ class Locations(Base):
     id = Column('id', Integer, primary_key=True, nullable=False, unique=True, autoincrement=True)
     location = Column('location', String, nullable=False, unique=True)
 
+
+class Selections(Base):
+    __tablename__ = cfg.SELECTIONS
+
+    id = Column('id', Integer, primary_key=True, nullable=False, unique=True, autoincrement=True)
+    meta_id = Column('meta_id', Integer, ForeignKey(f'{cfg.METATABLE}.id'), nullable=False)
+    sel_start = Column('sel_start', Integer, nullable=False, unique=False)
+    sel_end = Column('sel_end', Integer, nullable=False, unique=False)
+
     def __repr__(self):
         return '<Locations model {}>'.format(self.id)

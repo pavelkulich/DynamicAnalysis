@@ -1,6 +1,81 @@
 import numpy as np
 import pandas as pd
 
+models = [
+    'dynamic_double_pasternak',
+    'dynamic_single_winkler',
+    'dynamic_double_winkler',
+    'dynamic_single_pasternak'
+]
+
+
+class Model:
+    def __init__(self, type, x_interval=30):
+        self.x_interval = x_interval
+        if type not in models:
+            self.type = 'dynamic_single_winkler'
+        else:
+            self.type = type
+
+    def calculate_model(self, params):
+        if self.type == 'dynamic_double_pasternak':
+            dynamic_double_pasternak(params)
+        elif self.type == 'dynamic_single_winkler':
+            return self.dynamic_single_winkler(params)
+        elif self.type == 'dynamic_double_winkler':
+            pass
+        elif self.type == 'dynamic_single_pasternak':
+            pass
+        else:
+            return None
+
+    def dynamic_single_winkler(self, params):
+        ei = params['EI'][0]
+        m = params['m'][0]
+        c = params['c'][0]
+        k = params['k'][0]
+        v = params['v'][0]
+        q = params['Q'][0]
+
+        lmbd = np.power((k / (4 * ei)), 0.25)
+        char_len = 1 / lmbd
+
+        dyn_load = q / (ei * lmbd ** 3)
+
+        alpha = (v / (2 * lmbd) * np.sqrt(m / ei))
+        beta = (c / (2 * m) * np.sqrt(m / k))
+        # else:
+        #     alpha = 0.5
+        #     beta = 0.85
+        #     dyn_load = 8
+
+        rts = np.roots([1, 0, 4 * alpha ** 2, 8 * alpha * beta, 4])
+        sorted_rts = np.sort(rts)
+
+        matrix_g = np.array([
+            [1, 1, -1, -1],
+            [sorted_rts[0], sorted_rts[1], -sorted_rts[2], -sorted_rts[3]],
+            [sorted_rts[0] ** 2, sorted_rts[1] ** 2, -sorted_rts[2] ** 2, -sorted_rts[3] ** 2],
+            [sorted_rts[0] ** 3, sorted_rts[1] ** 3, -sorted_rts[2] ** 3, -sorted_rts[3] ** 3]
+        ])
+
+        inv_matrix_g = np.linalg.inv(matrix_g)
+        p = np.array([0, 0, 0, dyn_load])
+        p_trans = p.transpose()
+
+        consts_a = np.matmul(inv_matrix_g, p_trans)
+
+        s_r = np.linspace(0, self.x_interval, 500)
+        s_l = np.linspace(-self.x_interval, 0, 500)
+
+        w_r = consts_a[0] * np.exp(sorted_rts[0] * s_r) + consts_a[1] * np.exp(sorted_rts[1] * s_r)
+        w_l = consts_a[2] * np.exp(sorted_rts[2] * s_l) + consts_a[3] * np.exp(sorted_rts[3] * s_l)
+
+        defl = np.concatenate((w_l[:-1], w_r))
+        x_axis = np.concatenate((s_l[:-1], s_r)) * char_len / v
+
+        return df_from_lists(x_axis, -np.real(defl) * 1000)
+
 
 def dynamic_double_pasternak(gene, v, m1, m2):
     ei1 = gene['EI_1']
