@@ -1,7 +1,6 @@
 from glob import glob
 from datetime import datetime as dt
 from termcolor import colored
-from tkinter import filedialog
 import click
 import pandas as pd
 import plotter as pltr
@@ -27,9 +26,8 @@ class Writer:
 
     def import_data(self, extension='.txt', sep=';'):
 
-        # path = filedialog.askdirectory()
-        files = glob(f'D:\Pavel\Repos\DynamicAnalysis\data\*{extension}')
-
+        files = glob(f'data/*{extension}', recursive=True)
+        print(files)
         # files = glob(f'{path}\*{extension}')
 
         # Function prevents data duplicity
@@ -225,7 +223,7 @@ class Selector:
 
 
 if __name__ == '__main__':
-    # writer = Writer(location=cfg.LOCATION, usp=cfg.USP, crossing=cfg.CROSSING, track=cfg.TRACK)
-    # writer.import_data(sep=cfg.SEPARATOR)
-    selector = Selector()
-    selector.perform_selections()
+    writer = Writer(location=cfg.LOCATION, usp=cfg.USP, crossing=cfg.CROSSING, track=cfg.TRACK)
+    writer.import_data(sep=cfg.SEPARATOR)
+    # selector = Selector()
+    # selector.perform_selections()

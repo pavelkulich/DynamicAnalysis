@@ -5,6 +5,10 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 
 
+# pd.set_option('display.max_rows', 10000)
+# pd.set_option('display.max_columns', 10000)
+
+
 class Manipulator:
     def __init__(self, measured_data):
         self.measured_data = measured_data
@@ -12,41 +16,44 @@ class Manipulator:
         self.measured_sampling_interval = np.abs(self.measured_data['x_axis'][1] - self.measured_data['x_axis'][0])
         self.analytical_data = None
         self.analytical_sampling_interval = None
+        self.superposed_analytical_data = None
+        self.superposed_analytical_data_resampled = None
 
     def set_analytical_data(self, analytical_data):
         self.analytical_data = analytical_data
         self.analytical_sampling_interval = np.abs(
             self.analytical_data['x_axis'][1] - self.analytical_data['x_axis'][0])
-        print(self.analytical_data)
+        # print(self.analytical_data)
 
-    def get_significant_points(self, order=300, tolerance=0.2):
+    def get_significant_points(self, order=300, tolerance=0.4):
         self.measured_data['min'] = \
             self.measured_data.iloc[argrelextrema(self.measured_data['y_axis'].values, np.less_equal, order=order)[0]][
                 'y_axis']
         self.measured_data['min'] = self.measured_data['min'].fillna(0)
-        self.measured_data['min'] = self.measured_data.iloc[np.abs(self.measured_data['min'].values) >= tolerance]['min']
+        self.measured_data['min'] = self.measured_data.iloc[np.abs(self.measured_data['min'].values) >= tolerance][
+            'min']
 
     def get_measured_data(self):
         return self.measured_data
+
+    def get_superposed(self):
+        if self.superposed_analytical_data is None:
+            print(f'Superposed data equals {self.superposed_analytical_data}')
+        return self.superposed_analytical_data
+
+    def get_superposed_resampled(self):
+        if self.superposed_analytical_data_resampled is None:
+            print(f'Superposed resampled data equals {self.superposed_analytical_data_resampled}')
+        return self.superposed_analytical_data_resampled
 
     def move_and_superpose(self):
         if self.analytical_data is not None:
             if 'min' in self.measured_data.columns:
                 measured_mins = self.measured_data[self.measured_data['min'] < 0]
-                max_x_list = []
-                min_x_list = []
                 counter = 1
                 data_list = []
                 for _, row in measured_mins.iterrows():
-                    # TODO: optimalizace; neni nutne pocitat pro kazdy gen
                     moved_analytical_data = self.__get_new_x_axis(row)
-
-                    # crop data with x less 0
-                    moved_analytical_data = moved_analytical_data.drop(
-                        moved_analytical_data[moved_analytical_data['x_axis'] < 0].index)
-
-                    max_x_list.append(np.max(moved_analytical_data['x_axis']))
-                    min_x_list.append(np.min(moved_analytical_data['x_axis']))
 
                     if counter != 1:
                         idx = moved_analytical_data.iloc[(prev_moved_analytical_data['x_axis'] - np.min(
@@ -57,45 +64,83 @@ class Manipulator:
                     prev_moved_analytical_data = moved_analytical_data.copy()
                     moved_analytical_data.columns = [f'x_axis_{counter}', f'y_axis_{counter}']
                     data_list.append(moved_analytical_data)
-
                     counter += 1
 
-                max_x = np.max(max_x_list)
-                min_x = np.min(min_x_list)
-
-                self.measured_data = self.measured_data.drop(
-                    self.measured_data[self.measured_data['x_axis'] > max_x].index)
-                self.measured_data = self.measured_data.drop(
-                    self.measured_data[self.measured_data['x_axis'] < min_x].index)
-
+                # multi array by x axis
                 presup_analytical_data = pd.concat(data_list, axis=1)
 
+                # presup_analytical_data.to_csv('presup.csv')
+
+                # create superposed dataframe
                 sup_analytical_data = pd.DataFrame()
+
                 for iter in range(1, counter):
                     if iter != 1:
-                        sup_analytical_data['x_axis'].fillna(presup_analytical_data[f'x_axis_{iter}'], inplace=True)
+                        sup_analytical_data['x_axis'] = sup_analytical_data['x_axis'].combine_first(
+                            presup_analytical_data[f'x_axis_{iter}'])
                         sup_analytical_data['y_axis'] = sup_analytical_data['y_axis'] + presup_analytical_data[
                             f'y_axis_{iter}'].fillna(0)
                     else:
                         sup_analytical_data['x_axis'] = presup_analytical_data[f'x_axis_{iter}']
                         sup_analytical_data['y_axis'] = presup_analytical_data[f'y_axis_{iter}'].fillna(0)
 
+                # crop tails
+                self.superposed_analytical_data, self.measured_data = self.__crop_tails(sup_analytical_data)
 
-                return sup_analytical_data
+                # resample data
+                self.superposed_analytical_data_resampled = self.__resample_data()
 
             else:
                 self.get_significant_points()
                 self.move_and_superpose()
         else:
             print('Please set analytical data')
-            return None
 
-    # def __crop_tails(self):
+    def __crop_tails(self, sup_analytical_data):
+        min_analytical = np.min(sup_analytical_data['x_axis'])
+        max_analytical = np.max(sup_analytical_data['x_axis'])
+        min_measured = np.min(self.measured_data['x_axis'])
+        max_measured = np.max(self.measured_data['x_axis'])
+
+        # analytická kratší na obou stranách
+        if min_analytical > min_measured and max_analytical < max_measured:
+            measured_data = self.measured_data.drop(self.measured_data[
+                                                        self.measured_data['x_axis'] < np.min(
+                                                            sup_analytical_data['x_axis'])].index).drop(
+                self.measured_data[
+                    self.measured_data['x_axis'] > np.max(sup_analytical_data['x_axis'])].index).copy()
+
+        # analytická delší na obou stranách
+        elif min_analytical < min_measured and max_analytical > max_measured:
+            sup_analytical_data = sup_analytical_data.drop(sup_analytical_data[
+                                                               sup_analytical_data['x_axis'] < np.min(
+                                                                   self.measured_data['x_axis'])].index).drop(
+                sup_analytical_data[
+                    sup_analytical_data['x_axis'] > np.max(self.measured_data['x_axis'])].index).copy()
+
+        # analytická kratší na začátku, delší na konci
+        elif min_analytical > min_measured and max_analytical < max_measured:
+            measured_data = self.measured_data.drop(self.measured_data[
+                                                        self.measured_data['x_axis'] < np.min(
+                                                            sup_analytical_data['x_axis'])].index)
+            sup_analytical_data = sup_analytical_data.drop(sup_analytical_data[
+                                                               sup_analytical_data['x_axis'] > np.max(
+                                                                   self.measured_data['x_axis'])].index).copy()
+
+        # analytická delší na začátku, kratší na konci
+        elif min_analytical < min_measured and max_analytical > max_measured:
+            sup_analytical_data = sup_analytical_data.drop(sup_analytical_data[
+                                                               sup_analytical_data['x_axis'] < np.min(
+                                                                   self.measured_data['x_axis'])].index)
+            measured_data = self.measured_data.drop(self.measured_data[
+                                                        self.measured_data['x_axis'] > np.max(
+                                                            sup_analytical_data['x_axis'])].index).copy()
+
+        return sup_analytical_data, measured_data
 
     def __get_new_x_axis(self, row):
         analytical_min = self.analytical_data[
             self.analytical_data['y_axis'] == self.analytical_data['y_axis'].min()]
-
         first_index = 0
         last_index = self.analytical_data.index[-1]
         extreme_index = analytical_min.index[0]
@@ -111,17 +156,37 @@ class Manipulator:
         new_x = np.concatenate((new_x_l, new_x_r))
         moved_analytical_data = self.analytical_data.copy()
         moved_analytical_data['x_axis'] = new_x
+        print(moved_analytical_data)
 
         return moved_analytical_data
 
+    # method resamples data to base_data base
+    def __resample_data(self):
+        if self.superposed_analytical_data is None:
+            self.move_and_superpose()
 
-#####################
+        if self.measured_data.shape[0] == self.superposed_analytical_data.shape[0]:
+            return self.superposed_analytical_data
+
+        x = self.superposed_analytical_data['x_axis']
+        y = self.superposed_analytical_data['y_axis']
+        f = interpolate.interp1d(x, y)
+
+        first_x_val = self.measured_data['x_axis'].iloc[0]
+        last_x_val = self.measured_data['x_axis'].iloc[self.measured_data.shape[0] - 1]
+        x_range = (last_x_val - first_x_val) / self.measured_data.shape[0]
+        x_new = np.arange(first_x_val, last_x_val, x_range)
+        y_new = f(x_new)
+
+        resampling_product = pd.DataFrame(list(zip(self.measured_data['x_axis'], y_new)),
+                                          columns=["x_axis", "y_axis"])
+        return resampling_product
+
 
 def import_data(path="data/deflection.csv", separator=";", flip=True):
     data = pd.read_csv(path, separator)
     if flip:
         data_flip = -data.reindex(index=data.index[::-1]).reset_index(drop=True)
-        # print(data_flip)
         return data_flip
 
     return data

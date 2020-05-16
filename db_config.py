@@ -1,7 +1,7 @@
 ################
 # those variables need to be set
 YEAR = 2013
-LOCATION = 'Planá nad Lužnicí'  # measuring location
+LOCATION = 'Havlíčkův Brod'  # measuring location
 USP = True  # under sleeper pads
 CROSSING = False  # measured at crossing
 TRACK = 1  # measured track

@@ -5,6 +5,7 @@ import plotter
 import pandas as pd
 import numpy as np
 
+# DEBUG = False
 DEBUG = True
 
 
@@ -13,12 +14,12 @@ def debug(func, *args):
         func(*args)
 
 
-measurement_id = 22
+measurement_id = 5
 
 db = dbm.DBExporter(dbtype='sqlite', dbname='vut_db.sqlite')
 measured_data = db.columns_from_datatable(measurement_id)
 
-params = pd.DataFrame(np.array([[3e7, 300, 5e5, 1e8, 15, 8e4]]), columns=['EI', 'm', 'c', 'k', 'v', 'Q'])
+params = pd.DataFrame(np.array([[3e7, 300, 5e5, 1e8, 25, 15e4]]), columns=['EI', 'm', 'c', 'k', 'v', 'Q'])
 model = models.Model('dynamic_single_winkler')
 analytical_data = model.calculate_model(params)
 
@@ -29,7 +30,8 @@ debug(plotter.plot_deflection_for_ga, measured_data)
 man.get_significant_points()
 debug(plotter.plot_deflection_for_ga, measured_data)
 
-super_data = man.move_and_superpose()
+man.move_and_superpose()
+super_data = man.get_superposed_resampled()
 measured_data = man.get_measured_data()
 
 debug(plotter.plot_deflection_for_ga, measured_data, super_data)

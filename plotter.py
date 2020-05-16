@@ -48,8 +48,8 @@ def plot_deflections_overview(data, head):
 
 def plot_deflection_for_ga(*args):
     fig = plt.figure()
-    mng = plt.get_current_fig_manager()
-    mng.window.state("zoomed")
+    # mng = plt.get_current_fig_manager()
+    # mng.window.state("zoomed")
 
     for arg in args:
         plt.plot(arg['x_axis'], arg['y_axis'])
