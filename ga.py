@@ -24,6 +24,7 @@ class GA:
         pass
 
     def __optimize(self, population, iteration):
+        print(iteration)
         if iteration <= self.__num_of_populations:
             cols = list(population.columns)
             new_population = Population(cols, iteration)
@@ -59,6 +60,7 @@ class GA:
 
         # TODO: best solution here
         best_params = self.__populations.get_last_population().get_max_fitness_row()
+        best_params.to_csv('logs/best_solution.txt')
         best_analytical_data = self.__model.calculate_model(best_params)
 
         man = dtm.Manipulator(self.__measured_data.copy())
@@ -147,7 +149,7 @@ class Population:
 
     def perform_crossover(self):
         cross_pop = self.__selection_product.loc[:, self.__selection_product.columns != 'fitness']
-        print(cross_pop)
+        # print(cross_pop)
         crossing_point = int((cross_pop.shape[1] - 1) / 2)
 
         def cross(pop, c_p, idx):
@@ -183,7 +185,7 @@ class Population:
         return self.__population.loc[self.__population['fitness'] == np.max(self.__population['fitness']), :].iloc[0]
 
     def write_log(self):
-        self.__population.to_csv(f'logs/population_{self.__population_id}')
+        self.__population.to_csv(f'logs/population_{self.__population_id}.txt')
 
 
 class Populations:

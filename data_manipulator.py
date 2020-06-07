@@ -26,7 +26,7 @@ class Manipulator:
             self.analytical_data['x_axis'][1] - self.analytical_data['x_axis'][0])
         # print(self.analytical_data)
 
-    def get_significant_points(self, order=300, tolerance=0.4):
+    def get_significant_points(self, order=300, tolerance=0.15):
         self.measured_data['min'] = \
             self.measured_data.iloc[argrelextrema(self.measured_data['y_axis'].values, np.less_equal, order=order)[0]][
                 'y_axis']
@@ -118,10 +118,10 @@ class Manipulator:
         # analytická kratší na obou stranách
         if min_analytical >= min_measured and max_analytical <= max_measured:
             measured_data = self.measured_data.drop(self.measured_data[
-                                                        self.measured_data['x_axis'] < np.min(
-                                                            sup_analytical_data['x_axis'])].index).drop(
+                                                        self.measured_data['x_axis'] < min_analytical].index).drop(
                 self.measured_data[
-                    self.measured_data['x_axis'] > np.max(sup_analytical_data['x_axis'])].index).copy()
+                    self.measured_data['x_axis'] > max_analytical].index).reset_index(drop=True).copy()
+            print('cut 1')
 
         # analytická delší na obou stranách
         elif min_analytical < min_measured and max_analytical > max_measured:
@@ -129,27 +129,35 @@ class Manipulator:
                                                                sup_analytical_data['x_axis'] < np.min(
                                                                    self.measured_data['x_axis'])].index).drop(
                 sup_analytical_data[
-                    sup_analytical_data['x_axis'] > np.max(self.measured_data['x_axis'])].index).copy()
+                    sup_analytical_data['x_axis'] > np.max(self.measured_data['x_axis'])].index).reset_index(drop=True).copy()
 
-            measured_data = self.measured_data.copy()
+            measured_data = self.measured_data.reset_index(drop=True).copy()
+            print(min_measured)
+            print(max_measured)
+            print(min_analytical)
+            print(max_analytical)
+            print(sup_analytical_data)
+            print('cut 2')
 
         # analytická kratší na začátku, delší na konci
         elif min_analytical >= min_measured and max_analytical > max_measured:
             measured_data = self.measured_data.drop(self.measured_data[
                                                         self.measured_data['x_axis'] < np.min(
-                                                            sup_analytical_data['x_axis'])].index)
+                                                            sup_analytical_data['x_axis'])].index).reset_index(drop=True).copy()
             sup_analytical_data = sup_analytical_data.drop(sup_analytical_data[
                                                                sup_analytical_data['x_axis'] > np.max(
-                                                                   self.measured_data['x_axis'])].index).copy()
+                                                                   self.measured_data['x_axis'])].index).reset_index(drop=True).copy()
+            print('cut 3')
 
         # analytická delší na začátku, kratší na konci
-        elif min_analytical <= min_measured and max_analytical > max_measured:
+        elif min_analytical <= min_measured and max_analytical < max_measured:
             sup_analytical_data = sup_analytical_data.drop(sup_analytical_data[
                                                                sup_analytical_data['x_axis'] < np.min(
-                                                                   self.measured_data['x_axis'])].index)
+                                                                   self.measured_data['x_axis'])].index).reset_index(drop=True).copy()
             measured_data = self.measured_data.drop(self.measured_data[
                                                         self.measured_data['x_axis'] > np.max(
-                                                            sup_analytical_data['x_axis'])].index).copy()
+                                                            sup_analytical_data['x_axis'])].index).reset_index(drop=True).copy()
+            print('cut 4')
 
         else:
             print('this is the script error')
@@ -195,7 +203,20 @@ class Manipulator:
         f = interpolate.interp1d(x, y)
 
         first_x_val = self.measured_data['x_axis'].iloc[0]
+
+        i = 1
+        while x.iloc[0] > first_x_val:
+            first_x_val = self.measured_data['x_axis'].iloc[i]
+            i += 1
+
         last_x_val = self.measured_data['x_axis'].iloc[self.measured_data.shape[0] - 1]
+        j = 1
+
+        while x.iloc[-1] < last_x_val:
+            last_x_val = self.measured_data['x_axis'].iloc[self.measured_data.shape[0] - (1 + j)]
+            j += 1
+
+
         x_range = (last_x_val - first_x_val) / self.measured_data.shape[0]
         x_new = np.arange(first_x_val, last_x_val, x_range)
         y_new = f(x_new)
