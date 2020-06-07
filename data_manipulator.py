@@ -18,6 +18,7 @@ class Manipulator:
         self.analytical_sampling_interval = None
         self.superposed_analytical_data = None
         self.superposed_analytical_data_resampled = None
+        self.q_vector = pd.DataFrame()
 
     def set_analytical_data(self, analytical_data):
         self.analytical_data = analytical_data
@@ -35,6 +36,15 @@ class Manipulator:
 
     def get_measured_data(self):
         return self.measured_data
+
+    def adjust_q_vector(self):
+        for i in range(self.measured_data['y_axis'][self.measured_data['min'] < 0].shape[0]):
+            local_min = self.measured_data['y_axis'][self.measured_data['min'] < 0].iloc[i]
+            q = local_min / np.min(self.analytical_data['y_axis'])
+            self.q_vector[f'Q_{10 + i}'] = pd.DataFrame(columns=[f'Q_{i}'], data=[q])[f'Q_{i}']
+
+    def get_adjusted_q_vector(self):
+        return self.q_vector
 
     def get_superposed(self):
         if self.superposed_analytical_data is None:
@@ -54,6 +64,7 @@ class Manipulator:
                 data_list = []
                 for _, row in measured_mins.iterrows():
                     moved_analytical_data = self.__get_new_x_axis(row)
+                    moved_analytical_data['y_axis'] = moved_analytical_data['y_axis'] * self.q_vector[f'Q_{10 + counter - 1}'][0]
 
                     if counter != 1:
                         idx = moved_analytical_data.iloc[(prev_moved_analytical_data['x_axis'] - np.min(
@@ -102,8 +113,10 @@ class Manipulator:
         min_measured = np.min(self.measured_data['x_axis'])
         max_measured = np.max(self.measured_data['x_axis'])
 
+
+
         # analytická kratší na obou stranách
-        if min_analytical > min_measured and max_analytical < max_measured:
+        if min_analytical >= min_measured and max_analytical <= max_measured:
             measured_data = self.measured_data.drop(self.measured_data[
                                                         self.measured_data['x_axis'] < np.min(
                                                             sup_analytical_data['x_axis'])].index).drop(
@@ -118,8 +131,10 @@ class Manipulator:
                 sup_analytical_data[
                     sup_analytical_data['x_axis'] > np.max(self.measured_data['x_axis'])].index).copy()
 
+            measured_data = self.measured_data.copy()
+
         # analytická kratší na začátku, delší na konci
-        elif min_analytical > min_measured and max_analytical < max_measured:
+        elif min_analytical >= min_measured and max_analytical > max_measured:
             measured_data = self.measured_data.drop(self.measured_data[
                                                         self.measured_data['x_axis'] < np.min(
                                                             sup_analytical_data['x_axis'])].index)
@@ -128,13 +143,20 @@ class Manipulator:
                                                                    self.measured_data['x_axis'])].index).copy()
 
         # analytická delší na začátku, kratší na konci
-        elif min_analytical < min_measured and max_analytical > max_measured:
+        elif min_analytical <= min_measured and max_analytical > max_measured:
             sup_analytical_data = sup_analytical_data.drop(sup_analytical_data[
                                                                sup_analytical_data['x_axis'] < np.min(
                                                                    self.measured_data['x_axis'])].index)
             measured_data = self.measured_data.drop(self.measured_data[
                                                         self.measured_data['x_axis'] > np.max(
                                                             sup_analytical_data['x_axis'])].index).copy()
+
+        else:
+            print('this is the script error')
+            print(min_measured)
+            print(max_measured)
+            print(min_analytical)
+            print(max_analytical)
 
         return sup_analytical_data, measured_data
 
@@ -156,7 +178,7 @@ class Manipulator:
         new_x = np.concatenate((new_x_l, new_x_r))
         moved_analytical_data = self.analytical_data.copy()
         moved_analytical_data['x_axis'] = new_x
-        print(moved_analytical_data)
+        # print(moved_analytical_data)
 
         return moved_analytical_data
 
@@ -181,107 +203,3 @@ class Manipulator:
         resampling_product = pd.DataFrame(list(zip(self.measured_data['x_axis'], y_new)),
                                           columns=["x_axis", "y_axis"])
         return resampling_product
-
-
-def import_data(path="data/deflection.csv", separator=";", flip=True):
-    data = pd.read_csv(path, separator)
-    if flip:
-        data_flip = -data.reindex(index=data.index[::-1]).reset_index(drop=True)
-        return data_flip
-
-    return data
-
-
-# method finds scaling and moving coefficient in order to adjust analytical models with respect to measured data
-def get_rescale_coeffs(base_data, data):
-    # local min and max finding for measured data
-    base_data['min'] = \
-        base_data.iloc[argrelextrema(base_data['y_axis'].values, np.less_equal, order=20)[0]]['y_axis']
-    base_data['max'] = \
-        base_data.iloc[argrelextrema(base_data['y_axis'].values, np.greater_equal, order=20)[0]][
-            'y_axis']
-
-    base_data_low_1 = base_data['x_axis'][base_data['min'].nsmallest(2).index[0]]
-    base_data_low_2 = base_data['x_axis'][base_data['min'].nsmallest(2).index[1]]
-    base_data_high = base_data['x_axis'][base_data['max'].nlargest(1).index[0]]
-    base_data_diff = base_data_high - base_data_low_2
-
-    data_low_index = data['y_axis'].nsmallest(1).index[0]
-    data_high_index = data['y_axis'].nlargest(1).index[0]
-    data_low = data['x_axis'][data_low_index]
-    data_high = data['x_axis'][data_high_index]
-    data_diff = data_high - data_low
-
-    # coeff calculation
-    scale_linear_coeff = base_data_diff / data_diff
-    scale_constant_coeff_1 = scale_linear_coeff * data_high - base_data_high
-    scale_constant_coeff_2 = scale_constant_coeff_1 + (base_data_low_2 - base_data_low_1)
-
-    return scale_linear_coeff, scale_constant_coeff_1, scale_constant_coeff_2
-
-
-# method for adjusting data (scale and move)
-def scale_axis(data, coeff_1, coeff_2):
-    data['x_axis'] = data['x_axis'] * coeff_1 * 0.85 - coeff_2 * 0.95  # TODO: 0.85 a 0.95 budou paramatry ev. algoritmu
-    return data
-
-
-# method returns superposed product made from two dataframes
-def superposition(data_1, data_2):
-    data_1, data_2 = crop_data(data_1, data_2)
-    superposed_data = data_2.copy()
-    superposed_data['y_axis'] = superposed_data['y_axis'] + data_1['y_axis']
-
-    return superposed_data
-
-
-# method cuts non-common ends of two dataframes
-def crop_data(data_1, data_2):
-    first_data1_index = data_1['x_axis'][0]
-    last_data2_index = data_2['x_axis'][data_2.index[-1]]
-
-    while data_2['x_axis'][0] < first_data1_index:
-        data_2 = data_2.drop([0]).copy().reset_index(drop=True)
-
-    while data_1['x_axis'][data_1.index[-1]] > last_data2_index:
-        data_1 = data_1.drop([data_1.index[-1]]).copy().reset_index(drop=True)
-
-    return data_1, data_2
-
-
-# method resamples data to base_data base
-def resample_data(base_data, data):
-    if base_data.shape[0] == data.shape[0]:
-        return data
-
-    x = data['x_axis']
-    y = data['y_axis']
-    f = interpolate.interp1d(x, y)
-
-    first_x_val = base_data['x_axis'][0]
-    last_x_val = base_data['x_axis'][base_data.shape[0] - 1]
-    x_range = (last_x_val - first_x_val) / base_data.shape[0]
-    x_new = np.arange(first_x_val, last_x_val, x_range)
-    y_new = f(x_new)
-
-    resampling_product = pd.DataFrame(list(zip(base_data['x_axis'], y_new)), columns=["x_axis", "y_axis"])
-    return resampling_product
-
-
-def rescale_and_fit(measured_data, analytical_data):
-    # analytical models scaling and moving
-    coeff_1, coeff_2, coeff_3 = get_rescale_coeffs(measured_data, analytical_data)
-    analytical_data_1 = scale_axis(analytical_data.copy(), coeff_1, coeff_2)
-    analytical_data_2 = scale_axis(analytical_data.copy(), coeff_1, coeff_3)
-
-    plt.plot(measured_data['x_axis'], measured_data['y_axis'])
-    plt.scatter(measured_data['x_axis'], measured_data['min'])
-    plt.scatter(measured_data['x_axis'], measured_data['max'])
-    plt.show()
-
-    # analytical models superposition and crop and resampling with respect to measured data
-    sup_data = superposition(analytical_data_1.copy(), analytical_data_2.copy())
-    superposed_data, measured_data = crop_data(sup_data, measured_data)
-    resampled_data = resample_data(measured_data, sup_data)
-
-    return measured_data, resampled_data

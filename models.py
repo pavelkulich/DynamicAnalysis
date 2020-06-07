@@ -17,6 +17,9 @@ class Model:
         else:
             self.type = type
 
+    def get_model_type(self):
+        return self.type
+
     def calculate_model(self, params):
         if self.type == 'dynamic_double_pasternak':
             dynamic_double_pasternak(params)
@@ -30,12 +33,12 @@ class Model:
             return None
 
     def dynamic_single_winkler(self, params):
-        ei = params['EI'][0]
-        m = params['m'][0]
-        c = params['c'][0]
-        k = params['k'][0]
-        v = params['v'][0]
-        q = params['Q'][0]
+        ei = params['EI']
+        m = params['m']
+        c = params['c']
+        k = params['k']
+        v = params['v']
+        q = params['Q']
 
         lmbd = np.power((k / (4 * ei)), 0.25)
         char_len = 1 / lmbd
