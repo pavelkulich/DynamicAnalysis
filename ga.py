@@ -101,8 +101,32 @@ class GA:
                 pop.append(chromosome)
 
             head = list(param[0] for param in params)
-            population = pd.DataFrame(pop, columns=head)
-            return population
+
+        elif self.__model.get_model_type() == 'dynamic_double_pasternak':
+            params = [['EI_1', 3e5, 1e9],
+                      ['EI_2', 0, 0],
+                      ['GA', 0, 0],
+                      ['k_1', 0, 0],
+                      ['k_2', 0, 0],
+                      ['c_1', 0, 0],
+                      ['c_2', 0, 0],
+                      ['m_1', 0, 0],
+                      ['m_2', 0, 0],
+                      ['v', 1e1, 1e2],
+                      ['Q', 9e2, 3e6]]
+
+            pop = []
+            for i in range(self.__pop_size):
+                chromosome = []
+                for param in params:
+                    gene = random.randrange(param[1], param[2])
+                    chromosome.append(gene)
+                pop.append(chromosome)
+
+            head = list(param[0] for param in params)
+
+        population = pd.DataFrame(pop, columns=head)
+        return population
 
 
 class Chromosome:
