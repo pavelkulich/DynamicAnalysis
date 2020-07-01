@@ -18,12 +18,12 @@ class GA:
 
     def run_optimization(self):
         population = self.get_init_population()
-        self.__optimize(population, 1)
+        self.__optimize(population, 1, True)
 
     def adjust_q_vector(self):
         pass
 
-    def __optimize(self, population, iteration):
+    def __optimize(self, population, iteration, mutation):
         print(iteration)
         if iteration <= self.__num_of_populations:
             cols = list(population.columns)
@@ -54,9 +54,13 @@ class GA:
             new_population.write_log()
             new_population.perform_selection()
             new_population.perform_crossover()
-
             iteration += 1
-            return self.__optimize(new_population.get_crossover_product(), iteration)
+
+            if mutation:
+                new_population.perform_mutation()
+                return self.__optimize(new_population.get_mutation_product(), iteration, mutation)
+
+            return self.__optimize(new_population.get_crossover_product(), iteration, mutation)
 
         # TODO: best solution here
         best_params = self.__populations.get_last_population().get_max_fitness_row()
@@ -104,14 +108,14 @@ class GA:
 
         elif self.__model.get_model_type() == 'dynamic_double_pasternak':
             params = [['EI_1', 3e5, 1e9],
-                      ['EI_2', 0, 0],
-                      ['GA', 0, 0],
-                      ['k_1', 0, 0],
-                      ['k_2', 0, 0],
-                      ['c_1', 0, 0],
-                      ['c_2', 0, 0],
-                      ['m_1', 0, 0],
-                      ['m_2', 0, 0],
+                      ['EI_2', 1, 1e4],
+                      ['GA', 1e5, 1e6],
+                      ['k_1', 5e7, 5e8],
+                      ['k_2', 1e6, 2e8],
+                      ['c_1', 5e4, 1e6],
+                      ['c_2', 8e4, 1e6],
+                      ['m_1', 1, 2e2],
+                      ['m_2', 1e2, 1e3],
                       ['v', 1e1, 1e2],
                       ['Q', 9e2, 3e6]]
 
@@ -150,6 +154,7 @@ class Population:
         self.__population = pd.DataFrame(columns=columns)
         self.__selection_product = None
         self.__crossover_product = None
+        self.__mutation_product = None
 
     def add_chromosome(self, chromosome):
         self.__population = self.__population.append(chromosome, ignore_index=True)
@@ -172,7 +177,7 @@ class Population:
         self.__selection_product = pd.DataFrame(offs, columns=self.__population.columns)
 
     def perform_crossover(self):
-        cross_pop = self.__selection_product.loc[:, self.__selection_product.columns != 'fitness']
+        cross_pop = self.__selection_product[self.__columns]
         # print(cross_pop)
         crossing_point = int((cross_pop.shape[1] - 1) / 2)
 
@@ -196,6 +201,22 @@ class Population:
 
         self.__crossover_product = pd.DataFrame(offs, columns=cross_pop.columns)
 
+    def perform_mutation(self):
+        mut_pop = self.__crossover_product[self.__columns]
+
+        def mutate(chromosome):
+            return chromosome
+
+        offs = []
+        for row in range(0, mut_pop.shape[0]):
+            if row % 2:
+                mut_row = mutate(mut_pop.iloc[row])
+                offs.append(mut_row)
+                continue
+            offs.append(mut_pop.iloc[row])
+
+        self.__mutation_product = pd.DataFrame(offs, columns=mut_pop.columns)
+
     def get_population(self):
         return self.__population[self.__columns]
 
@@ -204,6 +225,9 @@ class Population:
 
     def get_crossover_product(self):
         return self.__crossover_product[self.__columns]
+
+    def get_mutation_product(self):
+        return self.__mutation_product[self.__columns]
 
     def get_max_fitness_row(self):
         return self.__population.loc[self.__population['fitness'] == np.max(self.__population['fitness']), :].iloc[0]

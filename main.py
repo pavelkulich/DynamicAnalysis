@@ -22,9 +22,10 @@ measurement_id = 17
 
 db = dbm.DBExporter(dbtype='sqlite', dbname='vut_db.sqlite')
 measured_data = db.columns_from_datatable(measurement_id)
+# model = models.Model('dynamic_single_winkler')
 model = models.Model('dynamic_double_pasternak')
 
-gen_algs = ga.GA(model, measured_data, 100, 10)
+gen_algs = ga.GA(model, measured_data, 200, 10)
 gen_algs.run_optimization()
 
 end = time.time()

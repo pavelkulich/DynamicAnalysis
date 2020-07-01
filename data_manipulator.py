@@ -75,10 +75,17 @@ class Manipulator:
                     prev_moved_analytical_data = moved_analytical_data.copy()
                     moved_analytical_data.columns = [f'x_axis_{counter}', f'y_axis_{counter}']
                     data_list.append(moved_analytical_data)
+                    # plt.plot(moved_analytical_data[f'x_axis_{counter}'], moved_analytical_data[f'y_axis_{counter}'])
                     counter += 1
+
+
+                # plt.plot(self.measured_data['x_axis'], self.measured_data['y_axis'])
+                # plt.show()
 
                 # multi array by x axis
                 presup_analytical_data = pd.concat(data_list, axis=1)
+
+
 
                 # presup_analytical_data.to_csv('presup.csv')
 
@@ -132,11 +139,11 @@ class Manipulator:
                     sup_analytical_data['x_axis'] > np.max(self.measured_data['x_axis'])].index).reset_index(drop=True).copy()
 
             measured_data = self.measured_data.reset_index(drop=True).copy()
-            print(min_measured)
-            print(max_measured)
-            print(min_analytical)
-            print(max_analytical)
-            print(sup_analytical_data)
+            # print(min_measured)
+            # print(max_measured)
+            # print(min_analytical)
+            # print(max_analytical)
+            # print(sup_analytical_data)
             print('cut 2')
 
         # analytická kratší na začátku, delší na konci
