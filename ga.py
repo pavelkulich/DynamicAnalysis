@@ -6,6 +6,7 @@ import models
 import data_manipulator as dtm
 import db_manager as dbm
 import plotter
+import ga_config
 
 
 class GA:
@@ -18,17 +19,17 @@ class GA:
 
     def run_optimization(self):
         population = self.get_init_population()
-        self.__optimize(population, 1, True)
+        self.__optimize(population, 1, False)
 
     def adjust_q_vector(self):
         pass
 
     def __optimize(self, population, iteration, mutation):
-        print(iteration)
         if iteration <= self.__num_of_populations:
             cols = list(population.columns)
-            new_population = Population(cols, iteration)
+            new_population = Population(cols, iteration, self.__model)
             for index, params in population.iterrows():
+                print(f'population {iteration}, chromosome {index}')
                 analytical_data = self.__model.calculate_model(params)
                 man = dtm.Manipulator(self.__measured_data.copy())
 
@@ -89,12 +90,7 @@ class GA:
 
     def get_init_population(self):
         if self.__model.get_model_type() == 'dynamic_single_winkler':
-            params = [['EI', 3e5, 1e9],
-                      ['m', 1e1, 1e4],
-                      ['c', 1e4, 1e7],
-                      ['k', 5e5, 5e9],
-                      ['v', 1e1, 1e2],
-                      ['Q', 9e2, 3e6]]
+            params = ga_config.DYNAMIC_SINGLE_WINKLER
 
             pop = []
             for i in range(self.__pop_size):
@@ -107,17 +103,7 @@ class GA:
             head = list(param[0] for param in params)
 
         elif self.__model.get_model_type() == 'dynamic_double_pasternak':
-            params = [['EI_1', 3e5, 1e9],
-                      ['EI_2', 1, 1e4],
-                      ['GA', 1e5, 1e6],
-                      ['k_1', 5e7, 5e8],
-                      ['k_2', 1e6, 2e8],
-                      ['c_1', 5e4, 1e6],
-                      ['c_2', 8e4, 1e6],
-                      ['m_1', 1, 2e2],
-                      ['m_2', 1e2, 1e3],
-                      ['v', 1e1, 1e2],
-                      ['Q', 9e2, 3e6]]
+            params = ga_config.DYNAMIC_DOUBLE_PASTERNAK
 
             pop = []
             for i in range(self.__pop_size):
@@ -131,7 +117,6 @@ class GA:
 
         population = pd.DataFrame(pop, columns=head)
         return population
-
 
 class Chromosome:
     def __init__(self, columns):
@@ -148,13 +133,14 @@ class Chromosome:
 
 
 class Population:
-    def __init__(self, columns, population_id):
+    def __init__(self, columns, population_id, model):
         self.__population_id = population_id
         self.__columns = columns
         self.__population = pd.DataFrame(columns=columns)
         self.__selection_product = None
         self.__crossover_product = None
         self.__mutation_product = None
+        self.__model = model
 
     def add_chromosome(self, chromosome):
         self.__population = self.__population.append(chromosome, ignore_index=True)
@@ -205,7 +191,8 @@ class Population:
         mut_pop = self.__crossover_product[self.__columns]
 
         def mutate(chromosome):
-            return chromosome
+            new_chromosome = self.get_randomized_populatuion(chromosome)
+            return new_chromosome
 
         offs = []
         for row in range(0, mut_pop.shape[0]):
@@ -216,6 +203,22 @@ class Population:
             offs.append(mut_pop.iloc[row])
 
         self.__mutation_product = pd.DataFrame(offs, columns=mut_pop.columns)
+
+    def get_randomized_populatuion(self, chromosome):
+        if self.__model.get_model_type() == 'dynamic_single_winkler':
+            params = ga_config.DYNAMIC_SINGLE_WINKLER
+
+        elif self.__model.get_model_type() == 'dynamic_double_pasternak':
+            params = ga_config.DYNAMIC_DOUBLE_PASTERNAK
+
+        if params:
+            param = random.choice(params)
+            gene = random.randrange(param[1], param[2])
+            return chromosome.replace(to_replace=chromosome[param[0]], value=gene)
+
+        else:
+            print('Cannot randomize population. Model not implemented')
+            return  chromosome
 
     def get_population(self):
         return self.__population[self.__columns]

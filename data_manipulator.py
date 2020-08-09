@@ -34,6 +34,15 @@ class Manipulator:
         self.measured_data['min'] = self.measured_data.iloc[np.abs(self.measured_data['min'].values) >= tolerance][
             'min']
 
+        # for presentation purpose
+        # plt.plot(self.measured_data['x_axis'], self.measured_data['y_axis'])
+        # plt.scatter(self.measured_data['x_axis'], self.measured_data['min'], color='r')
+        # plt.grid(True)
+        # plt.subplots_adjust(left=0.05, bottom=0.08, right=0.95, top=0.95)
+        # plt.xlabel('time [s]', fontsize=15)
+        # plt.ylabel('deflection [mm]', fontsize=15)
+        # plt.show()
+
     def get_measured_data(self):
         return self.measured_data
 
@@ -78,8 +87,11 @@ class Manipulator:
                     # plt.plot(moved_analytical_data[f'x_axis_{counter}'], moved_analytical_data[f'y_axis_{counter}'])
                     counter += 1
 
-
-                # plt.plot(self.measured_data['x_axis'], self.measured_data['y_axis'])
+                # plt.grid(True)
+                # plt.subplots_adjust(left=0.05, bottom=0.08, right=0.95, top=0.95)
+                # plt.xlabel('time [s]', fontsize=15)
+                # plt.ylabel('deflection [mm]', fontsize=15)
+                # plt.plot(self.measured_data['x_axis'], self.measured_data['y_axis'], color='#1f7bb8')
                 # plt.show()
 
                 # multi array by x axis
@@ -128,7 +140,7 @@ class Manipulator:
                                                         self.measured_data['x_axis'] < min_analytical].index).drop(
                 self.measured_data[
                     self.measured_data['x_axis'] > max_analytical].index).reset_index(drop=True).copy()
-            print('cut 1')
+            # print('cut 1')
 
         # analytická delší na obou stranách
         elif min_analytical < min_measured and max_analytical > max_measured:
@@ -144,7 +156,7 @@ class Manipulator:
             # print(min_analytical)
             # print(max_analytical)
             # print(sup_analytical_data)
-            print('cut 2')
+            # print('cut 2')
 
         # analytická kratší na začátku, delší na konci
         elif min_analytical >= min_measured and max_analytical > max_measured:
@@ -154,7 +166,7 @@ class Manipulator:
             sup_analytical_data = sup_analytical_data.drop(sup_analytical_data[
                                                                sup_analytical_data['x_axis'] > np.max(
                                                                    self.measured_data['x_axis'])].index).reset_index(drop=True).copy()
-            print('cut 3')
+            # print('cut 3')
 
         # analytická delší na začátku, kratší na konci
         elif min_analytical <= min_measured and max_analytical < max_measured:
@@ -164,7 +176,7 @@ class Manipulator:
             measured_data = self.measured_data.drop(self.measured_data[
                                                         self.measured_data['x_axis'] > np.max(
                                                             sup_analytical_data['x_axis'])].index).reset_index(drop=True).copy()
-            print('cut 4')
+            # print('cut 4')
 
         else:
             print('this is the script error')

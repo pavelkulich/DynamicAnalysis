@@ -56,13 +56,14 @@ def plot_deflection_for_ga(*args):
 
         if 'min' in arg.columns:
             plt.scatter(arg['x_axis'], arg['min'], color='red')
-        plt.legend(arg.columns[arg.columns != 'time'], fontsize=18, loc='lower right')
+        # plt.legend(arg.columns[arg.columns != 'time'], fontsize=18, loc='lower right')
 
-    plt.title('Deflection')
+    plt.subplots_adjust(left=0.05, bottom=0.08, right=0.95, top=0.95)
+    # plt.title('Deflection')
     plt.grid(True)
     # plt.xticks(np.arange(min(data['x_axis']), max(data['x_axis']), 0.2))
-    plt.xlabel('Time [s]')
-    plt.ylabel('Deflection [mm]')
+    plt.xlabel('Time [s]', fontsize=15)
+    plt.ylabel('Deflection [mm]', fontsize=15)
 
     # plt.savefig(os.path.join(f'{os.path.dirname(__file__)}/images/', f'{head.filename[0].split(".")[0]}'))
     # plt.close(fig=fig)
