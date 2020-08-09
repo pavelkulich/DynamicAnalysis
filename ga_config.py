@@ -5,6 +5,13 @@ DYNAMIC_SINGLE_WINKLER = [['EI', 3e5, 1e9],
                           ['v', 1e1, 1e2],
                           ['Q', 9e2, 3e6]]
 
+DYNAMIC_SINGLE_WINKLER_TEST = [['EI', 3e7],
+                              ['m', 1e3], # kg/m
+                              ['c', 1e5], # Nsm^(-2)
+                              ['k', 5e7], # Nm^(-2)
+                              ['v', 5e1], # ms^(-1)
+                              ['Q', 2e5]] # N
+
 DYNAMIC_DOUBLE_PASTERNAK = [['EI_1', 3e5, 1e9],
                             ['EI_2', 1, 1e4],
                             ['GA', 1e5, 1e6],

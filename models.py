@@ -10,8 +10,9 @@ models = [
 
 
 class Model:
-    def __init__(self, type, x_interval=30):
+    def __init__(self, type, moment=False, x_interval=30):
         self.x_interval = x_interval
+        self.moment = moment
         if type not in models:
             self.type = 'dynamic_single_winkler'
         else:
@@ -76,6 +77,10 @@ class Model:
 
         defl = np.concatenate((w_l[:-1], w_r))
         x_axis = np.concatenate((s_l[:-1], s_r)) * char_len / v
+
+        if self.moment:
+            mom = np.diff(np.diff(defl))
+            return df_from_lists(x_axis, np.real(mom))
 
         return df_from_lists(x_axis, -np.real(defl) * 1000)
 
@@ -210,6 +215,10 @@ class Model:
         w1 = np.concatenate((w1l, w1r[1::]))
         # x_axis = np.concatenate((s_l, s_r))
         x_axis = np.concatenate((s_l[:-1], s_r)) * char_len / v
+
+        if self.moment:
+            mom = np.diff(np.diff(w1))
+            return df_from_lists(x_axis, -np.real(mom) * 1000)
 
         return df_from_lists(x_axis, np.real(w1) * 1000)
 
