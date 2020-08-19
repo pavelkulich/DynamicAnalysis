@@ -5,6 +5,7 @@ import random
 import models
 import data_manipulator as dtm
 import db_manager as dbm
+from scipy import spatial
 import plotter
 import ga_config
 
@@ -47,7 +48,6 @@ class GA:
                 # fitness calculation
                 fitness = self.__calculate_fitness(measured_data, super_data)
                 params['fitness'] = fitness
-                # TODO: ošetřit sloupce v entitě Population
                 params = params.append(q_vector.iloc[0])
                 new_population.add_chromosome(params)
 
@@ -63,10 +63,9 @@ class GA:
 
             return self.__optimize(new_population.get_crossover_product(), iteration, mutation)
 
-        # TODO: best solution here
         best_params = self.__populations.get_last_population().get_max_fitness_row()
-        best_params.to_csv('logs/best_solution.txt')
         best_analytical_data = self.__model.calculate_model(best_params)
+        best_params.astype(int, errors='ignore').to_csv('logs/best_solution.txt')
 
         man = dtm.Manipulator(self.__measured_data.copy())
 
@@ -83,40 +82,48 @@ class GA:
 
         return None
 
+    # def __calculate_fitness(self, measured_data, analytical_data):
+    #     diff = np.sum((measured_data['y_axis'] / 10000 - analytical_data['y_axis'] / 10000) ** 2)
+    #     print(diff)
+    #     lmbd = lambda x: 1 if x <= 0 else x
+    #     return lmbd(int(diff ** (-1)))
+
     def __calculate_fitness(self, measured_data, analytical_data):
-        diff = np.sum((measured_data['y_axis'] / 1000 - analytical_data['y_axis'] / 1000) ** 2)
-        lmbd = lambda x: 1 if x <= 0 else x
-        return lmbd(int(diff ** (-1)))
+        result = 1 - spatial.distance.cosine(measured_data['y_axis'], analytical_data['y_axis'])
+        return int(result * 10000)
 
     def get_init_population(self):
         if self.__model.get_model_type() == 'dynamic_single_winkler':
             params = ga_config.DYNAMIC_SINGLE_WINKLER
 
-            pop = []
-            for i in range(self.__pop_size):
-                chromosome = []
-                for param in params:
-                    gene = random.randrange(param[1], param[2])
-                    chromosome.append(gene)
-                pop.append(chromosome)
-
-            head = list(param[0] for param in params)
-
         elif self.__model.get_model_type() == 'dynamic_double_pasternak':
             params = ga_config.DYNAMIC_DOUBLE_PASTERNAK
 
-            pop = []
-            for i in range(self.__pop_size):
-                chromosome = []
-                for param in params:
-                    gene = random.randrange(param[1], param[2])
-                    chromosome.append(gene)
-                pop.append(chromosome)
+        pop = []
+        for i in range(self.__pop_size):
+            chromosome = []
+            for param in params:
+                gene = random.randrange(param[1], param[2])
+                chromosome.append(gene)
+            pop.append(chromosome)
 
-            head = list(param[0] for param in params)
+        head = list(param[0] for param in params)
+
+
+        #
+        # pop = []
+        # for i in range(self.__pop_size):
+        #     chromosome = []
+        #     for param in params:
+        #         gene = random.randrange(param[1], param[2])
+        #         chromosome.append(gene)
+        #     pop.append(chromosome)
+        #
+        # head = list(param[0] for param in params)
 
         population = pd.DataFrame(pop, columns=head)
         return population
+
 
 class Chromosome:
     def __init__(self, columns):
@@ -148,6 +155,8 @@ class Population:
     def perform_selection(self):
         weight_cum = np.cumsum(self.__population['fitness'])
         weight_sum = np.sum(self.__population['fitness'])
+        print(weight_cum)
+        print(weight_sum)
 
         indexes = []
         offs = []
@@ -218,7 +227,7 @@ class Population:
 
         else:
             print('Cannot randomize population. Model not implemented')
-            return  chromosome
+            return chromosome
 
     def get_population(self):
         return self.__population[self.__columns]
@@ -236,7 +245,8 @@ class Population:
         return self.__population.loc[self.__population['fitness'] == np.max(self.__population['fitness']), :].iloc[0]
 
     def write_log(self):
-        self.__population.to_csv(f'logs/population_{self.__population_id}.txt')
+        int_population = self.__population.astype(int, errors='ignore')
+        int_population.to_csv(f'logs/population_{self.__population_id}.txt')
 
 
 class Populations:

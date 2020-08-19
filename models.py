@@ -80,9 +80,9 @@ class Model:
 
         if self.moment:
             mom = np.diff(np.diff(defl))
-            return df_from_lists(x_axis, np.real(mom))
+            return df_from_lists(x_axis, np.real(mom) * 100)
 
-        return df_from_lists(x_axis, -np.real(defl) * 1000)
+        return df_from_lists(x_axis, -np.real(defl) * 10000)
 
     def dynamic_double_pasternak(self, params):
         ei1 = params['EI_1']
@@ -218,9 +218,9 @@ class Model:
 
         if self.moment:
             mom = np.diff(np.diff(w1))
-            return df_from_lists(x_axis, -np.real(mom) * 1000)
+            return df_from_lists(x_axis, -np.real(mom) * 10000)
 
-        return df_from_lists(x_axis, np.real(w1) * 1000)
+        return df_from_lists(x_axis, np.real(w1) * 10000)
 
 
 def df_from_lists(x_axis, y_axis):

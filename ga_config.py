@@ -2,7 +2,7 @@ DYNAMIC_SINGLE_WINKLER = [['EI', 3e5, 1e9],
                           ['m', 1e1, 1e4],
                           ['c', 1e4, 1e7],
                           ['k', 5e5, 5e9],
-                          ['v', 1e1, 1e2],
+                          ['v', 1e1, 5e1],
                           ['Q', 9e2, 3e6]]
 
 DYNAMIC_SINGLE_WINKLER_TEST = [['EI', 3e7],

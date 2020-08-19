@@ -26,7 +26,7 @@ class Manipulator:
             self.analytical_data['x_axis'][1] - self.analytical_data['x_axis'][0])
         # print(self.analytical_data)
 
-    def get_significant_points(self, order=300, tolerance=0.15):
+    def get_significant_points(self, order=50, tolerance=100):
         self.measured_data['min'] = \
             self.measured_data.iloc[argrelextrema(self.measured_data['y_axis'].values, np.less_equal, order=order)[0]][
                 'y_axis']

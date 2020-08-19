@@ -20,13 +20,24 @@ def debug(func, *args):
 
 measurement_id = 17
 
-db = dbm.DBExporter(dbtype='sqlite', dbname='vut_db.sqlite')
-measured_data = db.columns_from_datatable(measurement_id)
+# db = dbm.DBExporter(dbtype='sqlite', dbname='vut_db.sqlite')
+# measured_data = db.columns_from_datatable(measurement_id)
 
-model = models.Model('dynamic_single_winkler')
-# model = models.Model('dynamic_double_pasternak')
+tenzometric = pd.read_csv('data/44 t.asc', sep='\t', header=0, skiprows=[1])
+t1 = tenzometric['T1']
+t2 = tenzometric['T2']
+t_avg = (t1 + t2) / 2 + 63
 
-gen_algs = ga.GA(model, measured_data, 500, 20)
+measured_data = pd.DataFrame(zip(tenzometric['x'], -t_avg), columns=['x_axis', 'y_axis'])
+# print(measured_data)
+
+
+
+# model = models.Model('dynamic_single_winkler')
+# model = models.Model('dynamic_single_winkler')
+model = models.Model('dynamic_double_pasternak', True)
+
+gen_algs = ga.GA(model, measured_data, 500, 40)
 gen_algs.run_optimization()
 
 end = time.time()
