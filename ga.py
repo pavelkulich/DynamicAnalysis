@@ -4,7 +4,6 @@ import numpy as np
 import random
 import models
 import data_manipulator as dtm
-import db_manager as dbm
 from scipy import spatial
 import plotter
 import ga_config
@@ -108,18 +107,6 @@ class GA:
             pop.append(chromosome)
 
         head = list(param[0] for param in params)
-
-
-        #
-        # pop = []
-        # for i in range(self.__pop_size):
-        #     chromosome = []
-        #     for param in params:
-        #         gene = random.randrange(param[1], param[2])
-        #         chromosome.append(gene)
-        #     pop.append(chromosome)
-        #
-        # head = list(param[0] for param in params)
 
         population = pd.DataFrame(pop, columns=head)
         return population

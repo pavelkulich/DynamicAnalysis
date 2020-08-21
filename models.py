@@ -48,10 +48,6 @@ class Model:
 
         alpha = (v / (2 * lmbd) * np.sqrt(m / ei))
         beta = (c / (2 * m) * np.sqrt(m / k))
-        # else:
-        #     alpha = 0.5
-        #     beta = 0.85
-        #     dyn_load = 8
 
         rts = np.roots([1, 0, 4 * alpha ** 2, 8 * alpha * beta, 4])
         sorted_rts = np.sort(rts)

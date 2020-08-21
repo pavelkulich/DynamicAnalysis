@@ -75,14 +75,6 @@ class DBManager:
         data = self.session.query(MetaTable.id).statement
         return self.query_to_df(data)
 
-    # def join_data_and_metadata(self):
-    #     table = cfg.DATATABLE
-    #     table2 = cfg.METATABLE
-    #     with self.db_engine.connect() as connection:
-    #         query = connection.execute(f'SELECT * FROM {table} JOIN {table2}')
-    #         data = query.fetchall()
-    #     return data
-
     def query_to_df(self, query):
         df = pd.read_sql(query, con=self.db_engine)
         return df
@@ -165,5 +157,3 @@ class DBExporter(DBManager):
     def columns_from_datatable(self, id):
         data = self.session.query(DataTable.time, DataTable.dat7).filter(DataTable.meta_id == id).statement
         return self.query_to_df(data)
-
-
