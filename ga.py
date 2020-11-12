@@ -7,6 +7,7 @@ import data_manipulator as dtm
 from scipy import spatial
 import plotter
 import ga_config
+import matplotlib.pyplot as plt
 
 
 class GA:
@@ -17,14 +18,14 @@ class GA:
         self.__pop_size = pop_size
         self.__num_of_populations = num_of_populations
 
-    def run_optimization(self):
+    def run_optimization(self, round):
         population = self.get_init_population()
-        self.__optimize(population, 1, False)
+        self.__optimize(population, 1, True, round)
 
     def adjust_q_vector(self):
         pass
 
-    def __optimize(self, population, iteration, mutation):
+    def __optimize(self, population, iteration, mutation, round):
         if iteration <= self.__num_of_populations:
             cols = list(population.columns)
             new_population = Population(cols, iteration, self.__model)
@@ -51,20 +52,26 @@ class GA:
                 new_population.add_chromosome(params)
 
             self.__populations.add_population(new_population)
-            new_population.write_log()
+            # new_population.write_log()
             new_population.perform_selection()
             new_population.perform_crossover()
             iteration += 1
 
+            # plt.plot(measured_data['x_axis'], measured_data['y_axis'])
+            # plt.plot(super_data['x_axis'], super_data['y_axis'])
+            # plt.grid(True)
+            # plt.savefig(f'plots/iteration_{iteration}.png')
+            # plt.close()
+
             if mutation:
                 new_population.perform_mutation()
-                return self.__optimize(new_population.get_mutation_product(), iteration, mutation)
+                return self.__optimize(new_population.get_mutation_product(), iteration, mutation, round)
 
             return self.__optimize(new_population.get_crossover_product(), iteration, mutation)
 
         best_params = self.__populations.get_last_population().get_max_fitness_row()
         best_analytical_data = self.__model.calculate_model(best_params)
-        best_params.astype(int, errors='ignore').to_csv('logs/best_solution.txt')
+        best_params.astype(int, errors='ignore').to_csv(f'logs/best_solution_{round}.txt')
 
         man = dtm.Manipulator(self.__measured_data.copy())
 
@@ -77,19 +84,23 @@ class GA:
         super_data = man.get_superposed_resampled()
         measured_data = man.get_measured_data()
 
-        plotter.plot_deflection_for_ga(measured_data, super_data)
+        plotter.plot_deflection_for_ga(measured_data, super_data, iter_round=round)
 
         return None
 
-    # def __calculate_fitness(self, measured_data, analytical_data):
-    #     diff = np.sum((measured_data['y_axis'] / 10000 - analytical_data['y_axis'] / 10000) ** 2)
-    #     print(diff)
-    #     lmbd = lambda x: 1 if x <= 0 else x
-    #     return lmbd(int(diff ** (-1)))
-
     def __calculate_fitness(self, measured_data, analytical_data):
-        result = 1 - spatial.distance.cosine(measured_data['y_axis'], analytical_data['y_axis'])
-        return int(result * 10000)
+        diff = np.sum((measured_data['y_axis'] - analytical_data['y_axis']) ** 2)
+        sim = (diff / 10000) ** (-2)
+        # plt.plot(measured_data['y_axis'])
+        # plt.plot(analytical_data['y_axis'])
+        # plt.show()
+        # print(diff)
+        lmbd = lambda x: 1 if x <= 0 else x
+        return lmbd(int(sim))
+
+    # def __calculate_fitness(self, measured_data, analytical_data):
+    #     result = 1 - spatial.distance.cosine(measured_data['y_axis'], analytical_data['y_axis'])
+    #     return int(result * 10000)
 
     def get_init_population(self):
         if self.__model.get_model_type() == 'dynamic_single_winkler':

@@ -5,6 +5,21 @@ import pandas as pd
 import numpy as np
 import ga
 import time
+import os
+import shutil
+
+
+def remove_folder_content(dir_name):
+    for filename in os.listdir(dir_name):
+        file_path = os.path.join(dir_name, filename)
+        try:
+            shutil.rmtree(file_path)
+        except OSError:
+            os.remove(file_path)
+
+
+remove_folder_content('logs')
+remove_folder_content('plots')
 
 # DEBUG = False
 DEBUG = True
@@ -36,9 +51,10 @@ measured_data = db.columns_from_datatable(measurement_id)
 # model = models.Model('dynamic_single_winkler')
 model = models.Model('dynamic_double_pasternak', False)
 
-gen_algs = ga.GA(model, measured_data, 5000, 50)
-gen_algs.run_optimization()
+for i in range(20):
+    gen_algs = ga.GA(model, measured_data, 500, 20)
+    gen_algs.run_optimization(i)
 
 end = time.time()
 
-print(int(end - start))
+print(f'Time: {int(end - start)}')

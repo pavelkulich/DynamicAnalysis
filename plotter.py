@@ -46,7 +46,7 @@ def plot_deflections_overview(data, head):
     plt.show()
 
 
-def plot_deflection_for_ga(*args):
+def plot_deflection_for_ga(*args, iter_round):
     fig = plt.figure()
     # mng = plt.get_current_fig_manager()
     # mng.window.state("zoomed")
@@ -64,8 +64,10 @@ def plot_deflection_for_ga(*args):
     # plt.xticks(np.arange(min(data['x_axis']), max(data['x_axis']), 0.2))
     plt.xlabel('Time [s]', fontsize=15)
     plt.ylabel('Deflection [mm]', fontsize=15)
+    plt.savefig(f'plots/iteration_{iter_round}.png')
+    plt.close()
 
     # plt.savefig(os.path.join(f'{os.path.dirname(__file__)}/images/', f'{head.filename[0].split(".")[0]}'))
     # plt.close(fig=fig)
 
-    plt.show()
+    # plt.show()
