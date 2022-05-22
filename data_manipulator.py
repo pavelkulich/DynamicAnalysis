@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from scipy.signal import argrelextrema
 from scipy import interpolate
+import matplotlib.pyplot as plt
 
 
 class Manipulator:
@@ -41,10 +42,15 @@ class Manipulator:
     def get_measured_data(self):
         return self.measured_data
 
-    def adjust_q_vector(self):
+    def adjust_q_vector(self, params):
         for i in range(self.measured_data['y_axis'][self.measured_data['min'] < 0].shape[0]):
             local_min = self.measured_data['y_axis'][self.measured_data['min'] < 0].iloc[i]
             q = local_min / np.min(self.analytical_data['y_axis'])
+            if params['Q'] / q > 4e5:
+                q = params['Q'] / 4e5
+            elif params['Q'] / q < 5e4:
+                q = params['Q'] / 5e4
+
             self.q_vector[f'Q_{10 + i}'] = pd.DataFrame(columns=[f'Q_{i}'], data=[q])[f'Q_{i}']
 
     def get_adjusted_q_vector(self):
@@ -64,9 +70,11 @@ class Manipulator:
         if self.analytical_data is not None:
             if 'min' in self.measured_data.columns:
                 measured_mins = self.measured_data[self.measured_data['min'] < 0]
+                # print(measured_mins)
                 counter = 1
                 data_list = []
                 for _, row in measured_mins.iterrows():
+                    # print(row)
                     moved_analytical_data = self.__get_new_x_axis(row)
                     moved_analytical_data['y_axis'] = moved_analytical_data['y_axis'] * \
                                                       self.q_vector[f'Q_{10 + counter - 1}'][0]
@@ -89,9 +97,10 @@ class Manipulator:
                 # plt.ylabel('deflection [mm]', fontsize=15)
                 # plt.plot(self.measured_data['x_axis'], self.measured_data['y_axis'], color='#1f7bb8')
                 # plt.show()
-
+                # print(data_list)
                 # multi array by x axis
                 presup_analytical_data = pd.concat(data_list, axis=1)
+                # print(presup_analytical_data)
 
                 # presup_analytical_data.to_csv('presup.csv')
 
@@ -187,6 +196,7 @@ class Manipulator:
     def __get_new_x_axis(self, row):
         analytical_min = self.analytical_data[
             self.analytical_data['y_axis'] == self.analytical_data['y_axis'].min()]
+        # print(analytical_min)
         first_index = 0
         last_index = self.analytical_data.index[-1]
         extreme_index = analytical_min.index[0]

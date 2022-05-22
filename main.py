@@ -7,6 +7,9 @@ import ga
 import time
 import os
 import shutil
+import matplotlib.pyplot as plt
+import csv
+import time
 
 
 def remove_folder_content(dir_name):
@@ -18,43 +21,54 @@ def remove_folder_content(dir_name):
             os.remove(file_path)
 
 
-remove_folder_content('logs')
-remove_folder_content('plots')
+# remove_folder_content('logs')
+# remove_folder_content('plots')
 
 # DEBUG = False
 DEBUG = True
 
 start = time.time()
-print(start)
 
-
-def debug(func, *args):
-    if DEBUG:
-        func(*args)
-
-
+# id 17
 measurement_id = 17
 
 db = dbm.DBExporter(dbtype='sqlite', dbname='vut_db.sqlite')
-measured_data = db.columns_from_datatable(measurement_id)
-#
-# tenzometric = pd.read_csv('data/44 t.asc', sep='\t', header=0, skiprows=[1])
-# t1 = tenzometric['T1']
-# t2 = tenzometric['T2']
-# t_avg = (t1 + t2) / 2 + 63
-#
-# measured_data = pd.DataFrame(zip(tenzometric['x'], -t_avg), columns=['x_axis', 'y_axis'])
-# print(measured_data)
+db_data = db.columns_from_datatable(measurement_id)
+db_data.columns = ['x_axis', 'y_axis1', 'y_axis2']
 
+# plotter.plot_1(db_data)
 
-# model = models.Model('dynamic_single_winkler')
-# model = models.Model('dynamic_single_winkler')
+# data manipulation
+measured_data = pd.DataFrame()
+measured_data['x_axis'] = db_data['x_axis']
+measured_data['y_axis'] = (db_data['y_axis1'] + db_data['y_axis1']) / 2
+
+mean_window = 50
+measured_data['y_axis'] = measured_data['y_axis'].iloc[::-1].rolling(window=mean_window).mean()
+measured_data['x_axis'] = measured_data['x_axis'].iloc[:-(mean_window - 1)]
+measured_data = measured_data.dropna(how='all')
+
+measured_data.to_csv("id17.csv")
+
 model = models.Model('dynamic_double_pasternak', False)
 
-for i in range(20):
-    gen_algs = ga.GA(model, measured_data, 500, 20)
-    gen_algs.run_optimization(i)
+try:
+    # for i in range(20):
+    gen_algs = ga.GA(model, measured_data, 50, 15)
+    gen_algs.run_optimization()
+    # gen_algs.run_optimization(file)
 
-end = time.time()
+    end = time.time()
 
-print(f'Time: {int(end - start)}')
+    print(f'Time: {int(end - start)}')
+except:
+    with open('logs/error.csv', 'a', newline='') as csvfile:
+        fieldnames = ['Err']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writerow({'Err': 'Algorithm Error'})
+    time.sleep(3)
+    # os.system("shutdown /p")
+finally:
+    time.sleep(3)
+    # os.system("shutdown /p")

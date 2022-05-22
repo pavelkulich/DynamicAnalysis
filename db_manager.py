@@ -155,5 +155,5 @@ class DBImporter(DBManager):
 
 class DBExporter(DBManager):
     def columns_from_datatable(self, id):
-        data = self.session.query(DataTable.time, DataTable.dat7).filter(DataTable.meta_id == id).statement
+        data = self.session.query(DataTable.time, DataTable.dat3, DataTable.dat6).filter(DataTable.meta_id == id).statement
         return self.query_to_df(data)

@@ -216,7 +216,69 @@ class Model:
             mom = np.diff(np.diff(w1))
             return df_from_lists(x_axis, -np.real(mom) * 10000)
 
-        return df_from_lists(x_axis, np.real(w1) * 10000)
+        return df_from_lists(x_axis, np.real(w1) * 1000)
+
+def winkler_moment(params):
+    ei = params[0]
+    k = params[1]
+    q = params[2]
+    xp = np.linspace(0, 7, 1000)
+    xl = np.linspace(-7, 0, 1000)
+    L = (4 * ei / k) ** 0.25
+    wp = (q * L) / 4 * np.exp(-xp / L) * (np.cos(xp / L) - np.sin(xp / L))
+    wl = (q * L) / 4 * np.exp(-xp / L) * (np.cos(xp / L) - np.sin(xp / L))
+    mom = np.append(wl[::-1], wp[1::], 0) * 1000
+    x = np.append(xl, xp[1::], 0)
+    return df_from_lists(x, mom)
+
+def dynamic_single_winkler_moment(params):
+    ei = params[0]
+    k = params[1]
+    c = 1e6
+    m = 60
+    v = 20
+    q = params[2]
+
+    lmbd = np.power((k / (4 * ei)), 0.25)
+    char_len = 1 / lmbd
+
+    dyn_load = q * char_len
+
+    alpha = (v / (2 * lmbd) * np.sqrt(m / ei))
+    beta = (c / (2 * m) * np.sqrt(m / k))
+    # alpha = 0
+    # beta = 0
+
+    rts = np.roots([1, 0, 4 * alpha ** 2, 8 * alpha * beta, 4])
+    sorted_rts = np.sort(rts)
+
+    matrix_g = np.array([
+        [1, 1, -1, -1],
+        [sorted_rts[0], sorted_rts[1], -sorted_rts[2], -sorted_rts[3]],
+        [sorted_rts[0] ** 2, sorted_rts[1] ** 2, -sorted_rts[2] ** 2, -sorted_rts[3] ** 2],
+        [sorted_rts[0] ** 3, sorted_rts[1] ** 3, -sorted_rts[2] ** 3, -sorted_rts[3] ** 3]
+    ])
+
+    inv_matrix_g = np.linalg.inv(matrix_g)
+    p = np.array([0, dyn_load, 0, 0])
+    p_trans = p.transpose()
+
+    consts_a = np.matmul(inv_matrix_g, p_trans)
+
+    s_r = np.linspace(0, 7 / char_len, 1000)
+    s_l = np.linspace(-7 / char_len, 0, 1000)
+
+    w_r = np.real(consts_a[0] * np.exp(sorted_rts[0] * s_r) + consts_a[1] * np.exp(sorted_rts[1] * s_r))
+    w_l = np.real(consts_a[2] * np.exp(sorted_rts[2] * s_l) + consts_a[3] * np.exp(sorted_rts[3] * s_l))
+
+    mom = np.concatenate((w_l[:-1], w_r)) * 1000
+    x_axis = np.concatenate((s_l[:-1], s_r)) * char_len
+    # x_axis = np.concatenate((s_l[:-1], s_r))
+
+    # plt.plot(x_axis, defl)
+    # plt.show()
+
+    return df_from_lists(x_axis, mom)
 
 
 def df_from_lists(x_axis, y_axis):

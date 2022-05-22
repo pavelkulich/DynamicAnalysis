@@ -1,4 +1,3 @@
-import data_manipulator as man
 import pandas as pd
 import numpy as np
 import random
@@ -7,7 +6,9 @@ import data_manipulator as dtm
 from scipy import spatial
 import plotter
 import ga_config
+import os
 import matplotlib.pyplot as plt
+import csv
 
 
 class GA:
@@ -18,7 +19,7 @@ class GA:
         self.__pop_size = pop_size
         self.__num_of_populations = num_of_populations
 
-    def run_optimization(self, round):
+    def run_optimization(self, round=""):
         population = self.get_init_population()
         self.__optimize(population, 1, True, round)
 
@@ -37,7 +38,7 @@ class GA:
                 # data manipulation
                 man.set_analytical_data(analytical_data)
                 man.get_significant_points()
-                man.adjust_q_vector()
+                man.adjust_q_vector(params)
 
                 q_vector = man.get_adjusted_q_vector() * params['Q']
 
@@ -71,19 +72,34 @@ class GA:
 
         best_params = self.__populations.get_last_population().get_max_fitness_row()
         best_analytical_data = self.__model.calculate_model(best_params)
-        best_params.astype(int, errors='ignore').to_csv(f'logs/best_solution_{round}.txt')
+        best_params['vcr'] = 3.6 * np.power((best_params['k_1'] / (4 * best_params['EI_1'])), 0.25) / np.sqrt(
+            best_params['m_1'] / best_params['EI_1'])
+
+        if os.path.exists("logs/best_solutions.csv"):
+            with open('logs/best_solutions.csv', 'a', newline='') as csvfile:
+                fieldnames = best_params.index
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writerow(best_params.to_dict())
+        else:
+            with open('logs/best_solutions.csv', 'w', newline='') as csvfile:
+                fieldnames = best_params.index
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                writer.writerow(best_params.to_dict())
 
         man = dtm.Manipulator(self.__measured_data.copy())
 
         # data manipulation
         man.set_analytical_data(best_analytical_data)
         man.get_significant_points()
-        man.adjust_q_vector()
+        man.adjust_q_vector(best_params)
 
         man.move_and_superpose()
         super_data = man.get_superposed_resampled()
         measured_data = man.get_measured_data()
-
+        print(best_params)
         plotter.plot_deflection_for_ga(measured_data, super_data, iter_round=round)
 
         return None
@@ -91,10 +107,6 @@ class GA:
     def __calculate_fitness(self, measured_data, analytical_data):
         diff = np.sum((measured_data['y_axis'] - analytical_data['y_axis']) ** 2)
         sim = (diff / 10000) ** (-2)
-        # plt.plot(measured_data['y_axis'])
-        # plt.plot(analytical_data['y_axis'])
-        # plt.show()
-        # print(diff)
         lmbd = lambda x: 1 if x <= 0 else x
         return lmbd(int(sim))
 
