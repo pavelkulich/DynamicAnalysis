@@ -1,5 +1,5 @@
 import models as mod
-import data_manipulator as man
+import manipulator as man
 import plotter
 import random
 import numpy as np

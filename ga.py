@@ -2,12 +2,10 @@ import pandas as pd
 import numpy as np
 import random
 import models
-import data_manipulator as dtm
-from scipy import spatial
+import manipulator as dtm
 import plotter
-import ga_config
+import config
 import os
-import matplotlib.pyplot as plt
 import csv
 
 
@@ -72,8 +70,8 @@ class GA:
 
         best_params = self.__populations.get_last_population().get_max_fitness_row()
         best_analytical_data = self.__model.calculate_model(best_params)
-        best_params['vcr'] = 3.6 * np.power((best_params['k_1'] / (4 * best_params['EI_1'])), 0.25) / np.sqrt(
-            best_params['m_1'] / best_params['EI_1'])
+        best_params['vcr'] = 3.6 * np.power((best_params['k'] / (4 * best_params['EI'])), 0.25) / np.sqrt(
+            best_params['m'] / best_params['EI'])
 
         if os.path.exists("logs/best_solutions.csv"):
             with open('logs/best_solutions.csv', 'a', newline='') as csvfile:
@@ -116,10 +114,10 @@ class GA:
 
     def get_init_population(self):
         if self.__model.get_model_type() == 'dynamic_single_winkler':
-            params = ga_config.DYNAMIC_SINGLE_WINKLER
+            params = config.DYNAMIC_SINGLE_WINKLER
 
         elif self.__model.get_model_type() == 'dynamic_double_pasternak':
-            params = ga_config.DYNAMIC_DOUBLE_PASTERNAK
+            params = config.DYNAMIC_DOUBLE_PASTERNAK
 
         pop = []
         for i in range(self.__pop_size):
@@ -165,8 +163,8 @@ class Population:
     def perform_selection(self):
         weight_cum = np.cumsum(self.__population['fitness'])
         weight_sum = np.sum(self.__population['fitness'])
-        print(weight_cum)
-        print(weight_sum)
+        print(weight_cum) # odstranit
+        print(weight_sum) # odstranit
 
         indexes = []
         offs = []
@@ -225,10 +223,10 @@ class Population:
 
     def get_randomized_populatuion(self, chromosome):
         if self.__model.get_model_type() == 'dynamic_single_winkler':
-            params = ga_config.DYNAMIC_SINGLE_WINKLER
+            params = config.DYNAMIC_SINGLE_WINKLER
 
         elif self.__model.get_model_type() == 'dynamic_double_pasternak':
-            params = ga_config.DYNAMIC_DOUBLE_PASTERNAK
+            params = config.DYNAMIC_DOUBLE_PASTERNAK
 
         if params:
             param = random.choice(params)

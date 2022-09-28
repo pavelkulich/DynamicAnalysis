@@ -21,8 +21,10 @@ def plot_4(data_1, data_2, data_3, data_4):
     plt.show()
 
 def plot_1(data_1):
-    plt.plot(data_1)
+    plt.plot(data_1["x_axis"], data_1["y_axis"])
     plt.grid(True)
+    plt.ylabel("Nm")
+    plt.xlabel("time")
     plt.show()
 
 
