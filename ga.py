@@ -31,11 +31,11 @@ class GA:
             for index, params in population.iterrows():
                 print(f'population {iteration}, chromosome {index}')
                 analytical_data = self.__model.calculate_model(params)
-                man = dtm.Manipulator(self.__measured_data.copy())
+                man = dtm.Manipulator(self.__measured_data.copy()) # mozno vyhodit ze smycky
 
                 # data manipulation
                 man.set_analytical_data(analytical_data)
-                man.get_significant_points()
+                man.get_significant_points() # mozno vyhodit ze smycky
                 man.adjust_q_vector(params)
 
                 q_vector = man.get_adjusted_q_vector() * params['Q']
@@ -119,6 +119,9 @@ class GA:
         elif self.__model.get_model_type() == 'dynamic_double_pasternak':
             params = config.DYNAMIC_DOUBLE_PASTERNAK
 
+        elif self.__model.get_model_type() == 'dynamic_single_winkler_moment':
+            params = config.DYNAMIC_SINGLE_WINKLER
+
         pop = []
         for i in range(self.__pop_size):
             chromosome = []
@@ -163,8 +166,8 @@ class Population:
     def perform_selection(self):
         weight_cum = np.cumsum(self.__population['fitness'])
         weight_sum = np.sum(self.__population['fitness'])
-        print(weight_cum) # odstranit
-        print(weight_sum) # odstranit
+        # print(weight_cum) # odstranit
+        # print(weight_sum) # odstranit
 
         indexes = []
         offs = []
@@ -227,6 +230,9 @@ class Population:
 
         elif self.__model.get_model_type() == 'dynamic_double_pasternak':
             params = config.DYNAMIC_DOUBLE_PASTERNAK
+
+        elif self.__model.get_model_type() == 'dynamic_single_winkler_moment':
+            params = config.DYNAMIC_SINGLE_WINKLER
 
         if params:
             param = random.choice(params)

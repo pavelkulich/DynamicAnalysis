@@ -31,13 +31,13 @@ class Manipulator:
             'min']
 
         # for presentation purpose
-        plt.plot(self.measured_data['x_axis'], self.measured_data['y_axis'])
-        plt.scatter(self.measured_data['x_axis'], self.measured_data['min'], color='r')
-        plt.grid(True)
-        plt.subplots_adjust(left=0.05, bottom=0.08, right=0.95, top=0.95)
-        plt.xlabel('time [s]', fontsize=15)
-        plt.ylabel('deflection [mm]', fontsize=15)
-        plt.show()
+        # plt.plot(self.measured_data['x_axis'], self.measured_data['y_axis'])
+        # plt.scatter(self.measured_data['x_axis'], self.measured_data['min'], color='r')
+        # plt.grid(True)
+        # plt.subplots_adjust(left=0.05, bottom=0.08, right=0.95, top=0.95)
+        # plt.xlabel('time [s]', fontsize=15)
+        # plt.ylabel('deflection [mm]', fontsize=15)
+        # plt.show()
 
     def get_measured_data(self):
         return self.measured_data

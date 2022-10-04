@@ -49,11 +49,11 @@ measured_data["y_axis"] = measured_data["y_axis"] * w * E
 
 # measured_data.to_csv("id17.csv")
 
-model = models.Model('dynamic_single_winkler_moment', False)
+model = models.Model('dynamic_single_winkler_moment', True)
 
 # try:
 # for i in range(20):
-gen_algs = ga.GA(model, measured_data, 10, 2)
+gen_algs = ga.GA(model, measured_data, 500, 10)
 gen_algs.run_optimization()
 # gen_algs.run_optimization(file)
 
